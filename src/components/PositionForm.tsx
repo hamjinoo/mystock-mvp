@@ -61,6 +61,8 @@ export const PositionForm: React.FC<PositionFormProps> = ({
       avgPrice: Number(formData.avgPrice),
       currentPrice: Number(formData.currentPrice),
       tradeDate: position?.tradeDate || Date.now(),
+      strategyCategory: formData.category || PortfolioCategory.UNCATEGORIZED,
+      strategyTags: [],
       category: formData.category || PortfolioCategory.UNCATEGORIZED,
       strategy: formData.strategy,
       entryCount: Number(formData.entryCount) || 1,

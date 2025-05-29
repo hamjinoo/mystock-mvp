@@ -1,85 +1,50 @@
 import { ChartBarIcon, ClipboardDocumentListIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { NewPortfolioModal } from '../components/NewPortfolioModal';
-import { db } from '../services/db';
-import { Portfolio, Position } from '../types';
+import { PortfolioGroupService } from '../services/portfolioGroupService';
+import { PortfolioGroup } from '../types';
 
 export const MainPage: React.FC = () => {
-  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
-  const [positions, setPositions] = useState<Position[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [totalAssets, setTotalAssets] = useState(0);
-  const [totalProfit, setTotalProfit] = useState(0);
-  const [profitPercent, setProfitPercent] = useState(0);
-
-  const loadData = async () => {
-    try {
-      const portfolios = await db.portfolios.toArray();
-      setPortfolios(portfolios);
-
-      const positions = await db.positions.toArray();
-      setPositions(positions);
-
-      // 총자산 계산
-      const total = positions.reduce((sum, pos) => sum + (pos.quantity * pos.currentPrice), 0);
-      setTotalAssets(total);
-
-      // 총 수익 계산
-      const invested = positions.reduce((sum, pos) => sum + (pos.quantity * pos.avgPrice), 0);
-      const profit = total - invested;
-      setTotalProfit(profit);
-      setProfitPercent(invested > 0 ? (profit / invested) * 100 : 0);
-    } catch (error) {
-      console.error('Error loading data:', error);
-    }
-  };
+  const [groups, setGroups] = useState<PortfolioGroup[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {/* 상단 대시보드 */}
-      <div className="bg-gray-800 p-6">
-        <div className="max-w-md mx-auto">
-          <h1 className="text-2xl font-bold mb-4">내 자산</h1>
-          <div className="space-y-4">
-            <div>
-              <div className="text-gray-400 text-sm">총자산</div>
-              <div className="text-2xl font-bold">
-                ₩{totalAssets.toLocaleString()}
-              </div>
-            </div>
-            <div className="flex justify-between items-end">
-              <div>
-                <div className="text-gray-400 text-sm">총수익</div>
-                <div className={`text-xl font-bold ${totalProfit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  ₩{totalProfit.toLocaleString()}
-                </div>
-              </div>
-              <div className={`text-xl font-bold ${profitPercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {profitPercent.toFixed(2)}%
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+  const loadData = async () => {
+    try {
+      const groups = await PortfolioGroupService.getAll();
+      setGroups(groups);
+    } catch (error) {
+      console.error('Error loading portfolio groups:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      {/* 메뉴 그리드 */}
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-300"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
       <div className="p-6">
         <div className="max-w-md mx-auto grid grid-cols-2 gap-4">
           <Link
-            to="/portfolio"
+            to="/portfolio-groups"
             className="bg-gray-800 p-6 rounded-lg flex flex-col items-center justify-center text-center"
           >
             <ChartBarIcon className="h-8 w-8 mb-2" />
             <div className="font-semibold">포트폴리오</div>
-            <div className="text-sm text-gray-400">{portfolios.length}개</div>
+            <div className="text-sm text-gray-400">{groups.length}개 그룹</div>
           </Link>
           <Link
-            to="/memo"
+            to="/memos"
             className="bg-gray-800 p-6 rounded-lg flex flex-col items-center justify-center text-center"
           >
             <DocumentTextIcon className="h-8 w-8 mb-2" />
@@ -92,20 +57,14 @@ export const MainPage: React.FC = () => {
             <ClipboardDocumentListIcon className="h-8 w-8 mb-2" />
             <div className="font-semibold">할 일</div>
           </Link>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-gray-800 p-6 rounded-lg flex flex-col items-center justify-center text-center"
+          <Link
+            to="/portfolio-groups/new"
+            className="bg-gray-800 p-6 rounded-lg flex flex-col items-center justify-center text-center hover:bg-gray-700"
           >
-            <div className="font-semibold">새 포트폴리오</div>
-          </button>
+            <div className="font-semibold">새 포트폴리오 그룹</div>
+          </Link>
         </div>
       </div>
-
-      <NewPortfolioModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={loadData}
-      />
     </div>
   );
 }; 

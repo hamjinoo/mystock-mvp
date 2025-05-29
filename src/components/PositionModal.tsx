@@ -36,7 +36,39 @@ export const PositionModal: React.FC<PositionModalProps> = ({
     const loadConfig = async () => {
       const portfolio = await db.portfolios.get(portfolioId);
       if (portfolio?.config) {
-        setPortfolioConfig(portfolio.config);
+        const defaultCategoryAllocations = {
+          [PortfolioCategory.LONG_TERM]: {
+            targetPercentage: 50,
+            maxStockPercentage: 10,
+            maxEntries: 3
+          },
+          [PortfolioCategory.GROWTH]: {
+            targetPercentage: 30,
+            maxStockPercentage: 7.5,
+            maxEntries: 2
+          },
+          [PortfolioCategory.SHORT_TERM]: {
+            targetPercentage: 5,
+            maxStockPercentage: 5,
+            maxEntries: 1
+          },
+          [PortfolioCategory.CASH]: {
+            targetPercentage: 15,
+            maxStockPercentage: 100,
+            maxEntries: 1
+          },
+          [PortfolioCategory.UNCATEGORIZED]: {
+            targetPercentage: 0,
+            maxStockPercentage: 0,
+            maxEntries: 1
+          }
+        };
+
+        const config: PortfolioConfig = {
+          totalCapital: portfolio.config.totalCapital,
+          categoryAllocations: portfolio.config.categoryAllocations || defaultCategoryAllocations
+        };
+        setPortfolioConfig(config);
       }
     };
     loadConfig();
@@ -105,12 +137,14 @@ export const PositionModal: React.FC<PositionModalProps> = ({
         quantity: Number(quantity),
         avgPrice: Number(avgPrice),
         currentPrice: Number(currentPrice),
-        strategy: strategy.trim() || undefined,
         tradeDate: new Date(tradeDate).getTime(),
-        category: PortfolioCategory.UNCATEGORIZED,
+        strategyCategory: category,
+        strategyTags: [],
+        category,
+        strategy,
         entryCount: Number(entryCount),
         maxEntries: Number(maxEntries),
-        targetQuantity: Number(targetQuantity),
+        targetQuantity: Number(targetQuantity) || Number(quantity),
       };
 
       if (position) {

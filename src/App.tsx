@@ -2,7 +2,11 @@ import { ChartBarIcon, Cog6ToothIcon, DocumentTextIcon, HomeIcon } from '@heroic
 import React from 'react';
 import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import { MainPage } from './pages/MainPage';
-import { MemoPage } from './pages/MemoPage';
+import { MemoDetailPage } from './pages/MemoDetailPage';
+import { MemoListPage } from './pages/MemoListPage';
+import { NewPortfolioPage } from './pages/NewPortfolio';
+import { NewPortfolioGroupPage } from './pages/NewPortfolioGroup';
+import { NewPositionPage } from './pages/NewPosition';
 import { PortfolioConfigPage } from './pages/PortfolioConfigPage';
 import { PortfolioDetail } from './pages/PortfolioDetail';
 import { PortfolioList } from './pages/PortfolioList';
@@ -15,10 +19,14 @@ export const App: React.FC = () => {
       <main className="flex-1 pb-16">
         <Routes>
           <Route path="/" element={<MainPage />} />
-          <Route path="/portfolio" element={<PortfolioList />} />
-          <Route path="/portfolio/:id" element={<PortfolioDetail />} />
-          <Route path="/portfolio/:id/config" element={<PortfolioConfigPage />} />
-          <Route path="/memo" element={<MemoPage />} />
+          <Route path="/portfolio-groups" element={<PortfolioList />} />
+          <Route path="/portfolio-groups/new" element={<NewPortfolioGroupPage />} />
+          <Route path="/portfolio-groups/:groupId/portfolios/new" element={<NewPortfolioPage />} />
+          <Route path="/portfolios/:id" element={<PortfolioDetail />} />
+          <Route path="/portfolios/:id/config" element={<PortfolioConfigPage />} />
+          <Route path="/portfolios/:id/positions/new" element={<NewPositionPage />} />
+          <Route path="/memos" element={<MemoListPage />} />
+          <Route path="/memos/:id" element={<MemoDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/todo" element={<TodoPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -37,14 +45,14 @@ export const App: React.FC = () => {
               <span className="text-xs mt-1">홈</span>
             </Link>
             <Link
-              to="/portfolio"
+              to="/portfolio-groups"
               className="flex flex-col items-center p-2 text-gray-400 hover:text-white"
             >
               <ChartBarIcon className="h-6 w-6" />
               <span className="text-xs mt-1">포트폴리오</span>
             </Link>
             <Link
-              to="/memo"
+              to="/memos"
               className="flex flex-col items-center p-2 text-gray-400 hover:text-white"
             >
               <DocumentTextIcon className="h-6 w-6" />

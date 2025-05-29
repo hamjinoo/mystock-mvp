@@ -1,59 +1,56 @@
-import Dexie, { Table, Transaction } from 'dexie';
+import Dexie, { Table } from 'dexie';
 import {
     Memo,
     NewMemo,
     NewPortfolio,
+    NewPortfolioGroup,
     NewPosition,
     NewTodo,
     Portfolio,
     PortfolioCategory,
+    PortfolioGroup,
     Position,
     Todo
 } from '../types';
 
-class MyStockDB extends Dexie {
+export class MyStockDatabase extends Dexie {
+  portfolioGroups!: Table<PortfolioGroup>;
   portfolios!: Table<Portfolio>;
   positions!: Table<Position>;
   todos!: Table<Todo>;
   memos!: Table<Memo>;
 
   constructor() {
-    super('MyStockDB');
+    super('MyStockDatabase');
     
-    // 버전 1: 초기 스키마
     this.version(1).stores({
-      portfolios: '++id, name',
-      positions: '++id, portfolioId, symbol',
-      todos: '++id, portfolioId, done',
-      memos: '++id, createdAt',
+      portfolioGroups: '++id',
+      portfolios: '++id, groupId',
+      positions: '++id, portfolioId',
+      todos: '++id, portfolioGroupId'
     });
-
-    // 버전 2: Position 테이블에 분할매수 관련 필드 추가
-    this.version(2)
-      .stores({
-        portfolios: '++id, name',
-        positions: '++id, portfolioId, symbol',
-        todos: '++id, portfolioId, done',
-        memos: '++id, createdAt',
-      })
-      .upgrade(async (trans: Transaction) => {
-        const positions = await this.positions.toArray();
-        await Promise.all(
-          positions.map(async (position: Position) => {
-            await this.positions.update(position.id, {
-              category: PortfolioCategory.UNCATEGORIZED,
-              entryCount: 1,
-              maxEntries: 1,
-              targetQuantity: position.quantity
-            });
-          })
-        );
-      });
   }
 
-  // 포트폴리오 설정 업데이트 메서드 추가
-  async updatePortfolioConfig(id: number, config: Portfolio['config']) {
-    return await this.portfolios.update(id, { config });
+  async addPortfolioGroup(group: NewPortfolioGroup): Promise<number> {
+    return await this.portfolioGroups.add(group as PortfolioGroup);
+  }
+
+  async updatePortfolioGroup(id: number, group: Partial<PortfolioGroup>) {
+    return await this.portfolioGroups.update(id, group);
+  }
+
+  async deletePortfolioGroup(id: number) {
+    await this.transaction('rw', [this.portfolioGroups, this.portfolios, this.positions, this.todos], async () => {
+      const portfolios = await this.portfolios.where('groupId').equals(id).toArray();
+      const portfolioIds = portfolios.map(p => p.id);
+
+      await Promise.all([
+        this.portfolioGroups.delete(id),
+        ...portfolioIds.map(pid => this.positions.where('portfolioId').equals(pid).delete()),
+        this.portfolios.where('groupId').equals(id).delete(),
+        this.todos.where('portfolioGroupId').equals(id).delete()
+      ]);
+    });
   }
 
   async addPortfolio(portfolio: NewPortfolio): Promise<number> {
@@ -61,10 +58,10 @@ class MyStockDB extends Dexie {
   }
 
   async addPosition(position: NewPosition): Promise<number> {
-    // 새 포지션 추가 시 기본값 설정
     const positionWithDefaults = {
       ...position,
-      category: position.category || PortfolioCategory.UNCATEGORIZED,
+      strategyCategory: position.strategyCategory || PortfolioCategory.UNCATEGORIZED,
+      strategyTags: position.strategyTags || [],
       entryCount: position.entryCount || 1,
       maxEntries: position.maxEntries || 1,
       targetQuantity: position.targetQuantity || position.quantity,
@@ -86,11 +83,19 @@ class MyStockDB extends Dexie {
   }
 
   async updatePosition(position: Position) {
-    return await this.positions.update(position.id, position);
+    const { id, ...updateData } = position;
+    return await this.positions.update(id, updateData);
   }
 
   async updateTodo(todo: Todo) {
     return await this.todos.update(todo.id, todo);
+  }
+
+  async updateMemo(memo: Memo) {
+    return await this.memos.update(memo.id, {
+      ...memo,
+      updatedAt: Date.now()
+    });
   }
 
   async getPortfolioWithPositions(portfolioId: number) {
@@ -107,6 +112,96 @@ class MyStockDB extends Dexie {
       positions,
     };
   }
+
+  async exportData() {
+    try {
+      const [portfolioGroups, portfolios, positions, todos, memos] = await Promise.all([
+        this.portfolioGroups.toArray(),
+        this.portfolios.toArray(),
+        this.positions.toArray(),
+        this.todos.toArray(),
+        this.memos.toArray()
+      ]);
+
+      return {
+        version: 4,
+        timestamp: Date.now(),
+        data: {
+          portfolioGroups,
+          portfolios,
+          positions,
+          todos,
+          memos
+        }
+      };
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      throw error;
+    }
+  }
+
+  async importData(importData: any) {
+    try {
+      if (!importData.data || !importData.version) {
+        throw new Error('Invalid backup data format');
+      }
+
+      await this.transaction('rw', 
+        [this.portfolioGroups, this.portfolios, this.positions, this.todos, this.memos], 
+        async () => {
+          await Promise.all([
+            this.portfolioGroups.clear(),
+            this.portfolios.clear(),
+            this.positions.clear(),
+            this.todos.clear(),
+            this.memos.clear()
+          ]);
+
+          await Promise.all([
+            this.portfolioGroups.bulkAdd(importData.data.portfolioGroups || []),
+            this.portfolios.bulkAdd(importData.data.portfolios),
+            this.positions.bulkAdd(importData.data.positions),
+            this.todos.bulkAdd(importData.data.todos),
+            this.memos.bulkAdd(importData.data.memos)
+          ]);
+        }
+      );
+
+      return true;
+    } catch (error) {
+      console.error('Error importing data:', error);
+      throw error;
+    }
+  }
+
+  async initializeFromServer() {
+    try {
+      const response = await fetch('/backup/mystock-data.json');
+      if (response.ok) {
+        const serverData = await response.json();
+        await this.importData(serverData);
+        console.log('서버 데이터 복원 완료');
+        return true;
+      }
+    } catch (error) {
+      console.warn('서버 데이터 복원 실패:', error);
+    }
+    return false;
+  }
 }
 
-export const db = new MyStockDB(); 
+export const db = new MyStockDatabase();
+
+// 데이터베이스 연결 상태 확인
+db.on('ready', () => console.log('데이터베이스가 준비되었습니다.'));
+db.on('versionchange', () => {
+  console.log('데이터베이스 버전이 변경되었습니다.');
+  window.location.reload();
+});
+
+// 오류 처리
+db.open().catch((err: Error) => {
+  console.error('데이터베이스 오류:', err);
+});
+
+db.initializeFromServer().catch(console.error); 

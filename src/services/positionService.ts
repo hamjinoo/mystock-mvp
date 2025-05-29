@@ -1,40 +1,45 @@
-import { PortfolioCategory, Position } from '../types';
+import { NewPosition, Position } from '../types';
 import { db } from './db';
 
 export class PositionService {
   static async getByPortfolioId(portfolioId: number): Promise<Position[]> {
-    return await db.positions.where('portfolioId').equals(portfolioId).toArray();
+    return db.positions
+      .where('portfolioId')
+      .equals(portfolioId)
+      .toArray();
   }
 
   static async getById(id: number): Promise<Position | undefined> {
     return await db.positions.get(id);
   }
 
-  static async create(position: Omit<Position, 'id'>) {
+  static async create(data: NewPosition): Promise<Position> {
     const validatedData = {
-      ...position,
-      symbol: position.symbol.trim().toUpperCase(),
-      name: position.name || position.symbol.trim().toUpperCase(),
-      category: position.category || PortfolioCategory.UNCATEGORIZED,
-      tradeDate: new Date(position.tradeDate).getTime(),
+      ...data,
+      symbol: data.symbol.trim().toUpperCase(),
+      name: data.name || data.symbol.trim().toUpperCase()
     };
     const id = await db.positions.add(validatedData as any);
-    return { ...validatedData, id } as Position;
+    const position = await db.positions.get(id);
+    if (!position) throw new Error('포지션 생성에 실패했습니다.');
+    return position;
   }
 
-  static async update(position: Position) {
-    const validatedData: Position = {
-      ...position,
-      symbol: position.symbol.trim().toUpperCase(),
-      name: position.name || position.symbol.trim().toUpperCase(),
-      category: position.category || PortfolioCategory.UNCATEGORIZED,
-      tradeDate: new Date(position.tradeDate).getTime(),
+  static async update(id: number, data: Partial<Position>): Promise<void> {
+    const validatedData = {
+      ...data,
+      symbol: data.symbol?.trim().toUpperCase(),
+      name: data.name || data.symbol?.trim().toUpperCase(),
+      category: data.category || data.strategyCategory,
+      strategy: data.strategy,
+      entryCount: data.entryCount || 1,
+      maxEntries: data.maxEntries || 1,
+      targetQuantity: data.targetQuantity || data.quantity
     };
-    await db.positions.update(position.id, validatedData);
-    return validatedData;
+    await db.positions.update(id, validatedData);
   }
 
-  static async delete(id: number) {
+  static async delete(id: number): Promise<void> {
     await db.positions.delete(id);
   }
 
@@ -47,7 +52,7 @@ export class PositionService {
     }>();
 
     positions.forEach(position => {
-      const strategy = position.strategy || '미분류';
+      const strategy = position.strategyCategory.toString();
       const investment = position.quantity * position.avgPrice;
       const currentValue = position.quantity * position.currentPrice;
 

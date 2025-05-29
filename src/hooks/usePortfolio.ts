@@ -20,26 +20,23 @@ export function usePortfolio(id: number) {
     loadPortfolioData();
   }, [id]);
 
-  const loadPortfolioData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const loadPortfolioData = useCallback(async () => {
+    if (!id) return;
 
+    try {
       const [portfolio, positions, todos] = await Promise.all([
         PortfolioService.getById(id),
         PositionService.getByPortfolioId(id),
-        TodoService.getByPortfolioId(id),
+        TodoService.getByPortfolioGroupId(id)
       ]);
 
       setPortfolio(portfolio || null);
       setPositions(positions);
       setTodos(todos);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '데이터 로딩 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
+      console.error('포트폴리오 데이터 로딩 중 오류:', err);
     }
-  };
+  }, [id]);
 
   const addPosition = async (position: Omit<Position, 'id'>) => {
     try {
@@ -52,7 +49,7 @@ export function usePortfolio(id: number) {
 
   const updatePosition = async (position: Position) => {
     try {
-      await PositionService.update(position);
+      await PositionService.update(position.id, position);
       await loadPortfolioData();
     } catch (err) {
       throw err instanceof Error ? err : new Error('포지션 수정 중 오류가 발생했습니다.');
@@ -71,10 +68,10 @@ export function usePortfolio(id: number) {
   const addTodo = async (content: string) => {
     try {
       await TodoService.create({
-        portfolioId: id,
-        content,
-        done: false,
-        createdAt: Date.now(),
+        portfolioGroupId: id,
+        text: content,
+        completed: false,
+        createdAt: Date.now()
       });
       await loadPortfolioData();
     } catch (err) {
@@ -109,22 +106,25 @@ export function usePortfolio(id: number) {
 
   const updatePortfolio = useCallback(async (portfolio: PortfolioWithPositions): Promise<PortfolioWithPositions> => {
     await db.portfolios.put({
-      id: portfolio.id,
-      name: portfolio.name,
+      ...portfolio,
+      positions: undefined // positions는 별도로 저장되므로 제외
     });
 
     // 기존 포지션 삭제
     await db.positions.where('portfolioId').equals(portfolio.id).delete();
 
     // 새 포지션 추가
-    await db.positions.bulkPut(
-      portfolio.positions.map((position: Position) => ({
-        ...position,
-        portfolioId: portfolio.id,
-        name: position.name || position.symbol,
-        category: position.category || PortfolioCategory.UNCATEGORIZED,
-      }))
-    );
+    if (portfolio.positions) {
+      await Promise.all(portfolio.positions.map(position => 
+        db.positions.add({
+          ...position,
+          portfolioId: portfolio.id,
+          name: position.name || position.symbol,
+          strategyCategory: position.category || PortfolioCategory.UNCATEGORIZED,
+          strategyTags: position.strategyTags || []
+        })
+      ));
+    }
 
     return portfolio;
   }, []);

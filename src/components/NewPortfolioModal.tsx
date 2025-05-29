@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { db } from '../services/db';
-import { NewPortfolio } from '../types';
+import { NewPortfolio, PortfolioCategory } from '../types';
 
 interface NewPortfolioModalProps {
   isOpen: boolean;
@@ -21,8 +21,44 @@ export const NewPortfolioModal: React.FC<NewPortfolioModalProps> = ({
     setError(null);
 
     try {
+      const defaultCategoryAllocations = {
+        [PortfolioCategory.LONG_TERM]: {
+          targetPercentage: 50,
+          maxStockPercentage: 10,
+          maxEntries: 3
+        },
+        [PortfolioCategory.GROWTH]: {
+          targetPercentage: 30,
+          maxStockPercentage: 7.5,
+          maxEntries: 2
+        },
+        [PortfolioCategory.SHORT_TERM]: {
+          targetPercentage: 5,
+          maxStockPercentage: 5,
+          maxEntries: 1
+        },
+        [PortfolioCategory.CASH]: {
+          targetPercentage: 15,
+          maxStockPercentage: 100,
+          maxEntries: 1
+        },
+        [PortfolioCategory.UNCATEGORIZED]: {
+          targetPercentage: 0,
+          maxStockPercentage: 0,
+          maxEntries: 1
+        }
+      };
+
       const newPortfolio: NewPortfolio = {
-        name: name.trim(),
+        groupId: 0, // 기본 그룹
+        broker: '',
+        accountNumber: '',
+        accountName: name.trim(),
+        currency: 'KRW',
+        config: {
+          totalCapital: 0,
+          categoryAllocations: defaultCategoryAllocations
+        }
       };
 
       await db.addPortfolio(newPortfolio);

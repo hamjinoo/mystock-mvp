@@ -11,7 +11,10 @@ export const PortfolioList: React.FC = () => {
 
   const loadPortfolios = async () => {
     const portfolios = await db.portfolios.toArray();
-    setPortfolios(portfolios);
+    setPortfolios(portfolios.map(p => ({
+      id: p.id,
+      name: p.accountName
+    })));
   };
 
   const handleDelete = async (portfolioId: number) => {
