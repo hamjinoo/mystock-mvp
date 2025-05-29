@@ -10,7 +10,7 @@ const root = ReactDOM.createRoot(
 
 root.render(
   <React.StrictMode>
-    <BrowserRouter basename="/jinwoo">
+    <BrowserRouter basename="/mystock-mvp">
       <App />
     </BrowserRouter>
   </React.StrictMode>
