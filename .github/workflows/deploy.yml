@@ -30,8 +30,8 @@ jobs:
       - name: Deploy to FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
+          server: hjw3012.iwinv.net
+          username: hjw3012
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./build/
-          server-dir: /jinwoo/ 
+          server-dir: /public_html/jinwoo/ 
