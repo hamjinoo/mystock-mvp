@@ -117,8 +117,8 @@ export function usePortfolio(id: number) {
     if (portfolio.positions) {
       await Promise.all(portfolio.positions.map(position => 
         db.positions.add({
-          ...position,
-          portfolioId: portfolio.id,
+        ...position,
+        portfolioId: portfolio.id,
           name: position.name || position.symbol,
           strategyCategory: position.category || PortfolioCategory.UNCATEGORIZED,
           strategyTags: position.strategyTags || []

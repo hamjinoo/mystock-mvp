@@ -68,10 +68,10 @@ export const PortfolioList: React.FC = () => {
               <button
                 onClick={() => handleDelete(group.id)}
                 className="text-gray-400 hover:text-red-500"
-              >
+          >
                 ×
-              </button>
-            </div>
+          </button>
+        </div>
             <div className="space-y-2">
               <p className="text-sm text-gray-400">
                 목표 비중: {group.config?.targetAllocation || 0}%
@@ -79,15 +79,15 @@ export const PortfolioList: React.FC = () => {
               <p className="text-sm text-gray-400">
                 위험 수준: {group.config?.riskLevel || 0}
               </p>
-            </div>
+                    </div>
             <div className="mt-4 flex justify-end">
-              <button
+                <button
                 onClick={() => navigate(`/portfolio-groups/${group.id}/portfolios/new`)}
                 className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
+                >
                 계좌 추가
-              </button>
-            </div>
+                </button>
+              </div>
           </div>
         ))}
 
@@ -101,7 +101,7 @@ export const PortfolioList: React.FC = () => {
               <PlusIcon className="h-5 w-5 mr-1" />
               첫 그룹 추가
             </Link>
-          </div>
+        </div>
         )}
       </div>
     </div>

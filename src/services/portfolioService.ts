@@ -41,8 +41,8 @@ export class PortfolioService {
   }
 
   static async delete(id: number): Promise<void> {
-    await db.portfolios.delete(id);
-    await db.positions.where('portfolioId').equals(id).delete();
+      await db.portfolios.delete(id);
+      await db.positions.where('portfolioId').equals(id).delete();
   }
 
   static async getWithPositions(id: number) {
