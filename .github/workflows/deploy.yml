@@ -19,8 +19,17 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
+      - name: Clean npm cache
+        run: npm cache clean --force
+
+      - name: Remove existing node_modules and lock files
+        run: |
+          rm -rf node_modules
+          rm -f package-lock.json
+          rm -f yarn.lock
+
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm install --legacy-peer-deps
 
       - name: Build project
         run: npm run build
