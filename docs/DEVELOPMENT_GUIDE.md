@@ -1,249 +1,206 @@
-# Development Guide
+# 개발 가이드
 
-## Core Implementation Patterns
+## 1. 개발 환경 설정
 
-### 1. Database Operations
-```typescript
-// Always use transactions for related operations
-async function updatePortfolioAndPositions() {
-  await db.transaction('rw', [db.portfolios, db.positions], async () => {
-    await db.portfolios.update(id, portfolioChanges);
-    await db.positions.where('portfolioId').equals(id).modify(positionChanges);
-  });
-}
+### 1.1 필수 요구사항
+- Node.js 18 이상
+- npm 9 이상
+- Git
+
+### 1.2 프로젝트 설정
+```bash
+# 저장소 클론
+git clone <repository-url>
+
+# 의존성 설치
+npm install
+
+# 개발 서버 실행
+npm run dev
+
+# 프로덕션 빌드
+npm run build
 ```
 
-### 2. Position Updates
-```typescript
-// Standard position update pattern
-const updatePosition = async (position: Position) => {
-  // 1. Validate against portfolio config
-  const portfolio = await db.portfolios.get(position.portfolioId);
-  const allocation = portfolio.config.categoryAllocations[position.category];
-  
-  // 2. Check investment limits
-  const currentValue = position.quantity * position.currentPrice;
-  const maxInvestment = portfolio.config.totalCapital * (allocation.maxStockPercentage / 100);
-  
-  // 3. Validate entry count
-  if (position.entryCount > allocation.maxEntries) {
-    throw new Error('Exceeds maximum entries');
-  }
-  
-  // 4. Update position
-  await db.positions.update(position.id, {
-    ...position,
-    updatedAt: Date.now()
-  });
-}
+## 2. 프로젝트 구조
+
+### 2.1 디렉토리 구조
+```
+mystock-mvp/
+├── src/
+│   ├── components/     # 재사용 가능한 컴포넌트
+│   ├── pages/         # 페이지 컴포넌트
+│   ├── services/      # 비즈니스 로직
+│   ├── hooks/         # 커스텀 훅
+│   ├── types/         # 타입 정의
+│   └── utils/         # 유틸리티 함수
+├── docs/             # 문서
+└── public/           # 정적 파일
 ```
 
-### 3. Category Allocation Management
+### 2.2 주요 파일
+- `src/App.tsx`: 메인 라우팅 및 레이아웃
+- `src/services/db.ts`: 데이터베이스 설정
+- `src/types/index.ts`: 공통 타입 정의
+
+## 3. 코딩 컨벤션
+
+### 3.1 TypeScript
+- 명시적 타입 선언 사용
+- 인터페이스 우선 (타입 별칭보다)
+- 엄격한 null 체크 적용
+
+### 3.2 React
+- 함수형 컴포넌트 사용
+- 커스텀 훅으로 로직 분리
+- Props 인터페이스 정의
+
+### 3.3 스타일링
+- Tailwind CSS 클래스 사용
+- 컴포넌트별 스타일 구성
+- 반응형 디자인 적용
+
+## 4. 데이터베이스 가이드
+
+### 4.1 스키마 정의
 ```typescript
-interface AllocationCheck {
-  isValid: boolean;
-  currentAllocation: number;
-  maxAllocation: number;
+// src/services/db.ts
+this.version(1).stores({
+  accounts: '++id, broker, accountNumber, currency',
+  portfolios: '++id, accountId, name, currency',
+  positions: '++id, portfolioId, symbol, strategyCategory',
+  todos: '++id, portfolioId, completed, createdAt'
+});
+```
+
+### 4.2 데이터 접근
+```typescript
+// 데이터 조회
+const accounts = await db.accounts.toArray();
+
+// 데이터 생성
+const id = await db.accounts.add(newAccount);
+
+// 데이터 수정
+await db.accounts.update(id, updatedData);
+
+// 데이터 삭제
+await db.accounts.delete(id);
+```
+
+## 5. 컴포넌트 개발 가이드
+
+### 5.1 새 컴포넌트 생성
+```typescript
+// src/components/MyComponent.tsx
+import React from 'react';
+
+interface Props {
+  // props 정의
 }
 
-function checkCategoryAllocation(
-  positions: Position[],
-  config: PortfolioConfig,
-  category: PortfolioCategory
-): AllocationCheck {
-  const categoryPositions = positions.filter(p => p.category === category);
-  const totalValue = categoryPositions.reduce((sum, p) => 
-    sum + (p.quantity * p.currentPrice), 0);
-  
-  const allocation = config.categoryAllocations[category];
-  const maxAllocation = config.totalCapital * (allocation.targetPercentage / 100);
-  
+export const MyComponent: React.FC<Props> = ({ /* props */ }) => {
+  return (
+    // JSX
+  );
+};
+```
+
+### 5.2 커스텀 훅 생성
+```typescript
+// src/hooks/useMyHook.ts
+import { useState, useEffect } from 'react';
+
+export function useMyHook() {
+  // 훅 로직
   return {
-    isValid: totalValue <= maxAllocation,
-    currentAllocation: totalValue,
-    maxAllocation
+    // 반환값
   };
 }
 ```
 
-### 4. Investment Planning
-```typescript
-interface InvestmentPlan {
-  maxInvestment: number;
-  currentInvestment: number;
-  availableAmount: number;
-  suggestedEntries: number[];
-}
+## 6. 에러 처리
 
-function calculateInvestmentPlan(
-  position: Position,
-  config: PortfolioConfig
-): InvestmentPlan {
-  const allocation = config.categoryAllocations[position.category];
-  const maxInvestment = config.totalCapital * (allocation.maxStockPercentage / 100);
-  const currentInvestment = position.quantity * position.avgPrice;
-  
-  const remainingEntries = allocation.maxEntries - (position.entryCount || 0);
-  const availableAmount = maxInvestment - currentInvestment;
-  
-  const suggestedEntries = Array(remainingEntries)
-    .fill(availableAmount / remainingEntries);
-    
-  return {
-    maxInvestment,
-    currentInvestment,
-    availableAmount,
-    suggestedEntries
-  };
-}
-```
-
-## Error Handling Patterns
-
-### 1. Database Operations
+### 6.1 데이터베이스 에러
 ```typescript
 try {
-  await db.transaction('rw', [db.portfolios], async () => {
-    // Operations
-  });
-} catch (error) {
-  if (error.name === 'ConstraintError') {
-    // Handle constraint violations
-  } else if (error.name === 'QuotaExceededError') {
-    // Handle storage limits
-  } else {
-    // Handle other errors
-  }
+  await db.accounts.add(newAccount);
+} catch (err) {
+  console.error('계좌 생성 중 오류:', err);
+  throw err instanceof Error ? err : new Error('계좌 생성에 실패했습니다.');
 }
 ```
 
-### 2. Business Logic Validation
+### 6.2 사용자 입력 검증
 ```typescript
-function validatePortfolioOperation(portfolio: Portfolio): void {
-  // 1. Check total allocation
-  const totalAllocation = Object.values(portfolio.config.categoryAllocations)
-    .reduce((sum, cat) => sum + cat.targetPercentage, 0);
-  if (totalAllocation !== 100) {
-    throw new Error('Category allocations must sum to 100%');
-  }
-  
-  // 2. Check position limits
-  portfolio.positions?.forEach(position => {
-    const allocation = portfolio.config.categoryAllocations[position.category];
-    if (!allocation) {
-      throw new Error(`Invalid category: ${position.category}`);
-    }
-    // Additional checks...
-  });
-}
+const validateAccount = (data: unknown): Account => {
+  // 검증 로직
+};
 ```
 
-## Component Patterns
+## 7. 성능 최적화
 
-### 1. Form Handling
+### 7.1 메모이제이션
 ```typescript
-function useFormState<T>(initialState: T) {
-  const [state, setState] = useState<T>(initialState);
-  const [errors, setErrors] = useState<Partial<Record<keyof T, string>>>({});
-  
-  const validate = useCallback((data: T): boolean => {
-    // Validation logic
-    return true;
-  }, []);
-  
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (validate(state)) {
-      try {
-        await submitData(state);
-      } catch (error) {
-        setErrors(error.validationErrors);
-      }
-    }
-  }, [state, validate]);
-  
-  return { state, setState, errors, handleSubmit };
-}
+// 컴포넌트 메모이제이션
+const MemoizedComponent = React.memo(MyComponent);
+
+// 값 메모이제이션
+const memoizedValue = useMemo(() => computeValue(deps), [deps]);
+
+// 콜백 메모이제이션
+const memoizedCallback = useCallback(() => {
+  // 콜백 로직
+}, [deps]);
 ```
 
-### 2. Data Loading
+### 7.2 데이터 로딩 최적화
 ```typescript
-function useDataLoader<T>(
-  loadFn: () => Promise<T>,
-  dependencies: any[] = []
-) {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  
-  useEffect(() => {
-    let mounted = true;
-    
-    const load = async () => {
-      try {
-        const result = await loadFn();
-        if (mounted) {
-          setData(result);
-          setError(null);
-        }
-      } catch (e) {
-        if (mounted) {
-          setError(e);
-          setData(null);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-    
-    load();
-    return () => { mounted = false; };
-  }, dependencies);
-  
-  return { data, loading, error, reload: load };
-}
+// 일괄 처리
+const [accounts, portfolios] = await Promise.all([
+  db.accounts.toArray(),
+  db.portfolios.toArray()
+]);
+
+// 인덱스 사용
+const accountPortfolios = await db.portfolios
+  .where('accountId')
+  .equals(accountId)
+  .toArray();
 ```
 
-## Testing Patterns
+## 8. 테스트
 
-### 1. Component Tests
+### 8.1 단위 테스트
 ```typescript
-describe('PositionModal', () => {
-  it('validates entry count against max entries', async () => {
-    const position = mockPosition({
-      entryCount: 4,
-      maxEntries: 3
-    });
-    
-    render(<PositionModal position={position} />);
-    
-    await userEvent.click(screen.getByRole('button', { name: /save/i }));
-    
-    expect(screen.getByText(/exceeds maximum entries/i)).toBeInTheDocument();
+describe('MyComponent', () => {
+  it('renders correctly', () => {
+    // 테스트 코드
   });
 });
 ```
 
-### 2. Service Tests
+### 8.2 통합 테스트
 ```typescript
-describe('PortfolioService', () => {
-  beforeEach(async () => {
-    await db.delete();
-    await db.open();
+describe('Account Management', () => {
+  it('creates and manages accounts', async () => {
+    // 테스트 코드
   });
-  
-  it('enforces category allocation limits', async () => {
-    const portfolio = await createTestPortfolio();
-    const position = mockPosition({
-      category: PortfolioCategory.LONG_TERM,
-      quantity: 100,
-      currentPrice: 1000
-    });
-    
-    await expect(
-      PortfolioService.addPosition(portfolio.id, position)
-    ).rejects.toThrow(/exceeds category allocation/i);
-  });
-}); 
+});
+```
+
+## 9. 배포
+
+### 9.1 빌드
+```bash
+# 프로덕션 빌드
+npm run build
+
+# 빌드 미리보기
+npm run preview
+```
+
+### 9.2 환경 설정
+- `.env`: 환경 변수
+- `vite.config.ts`: Vite 설정
+- `tailwind.config.js`: Tailwind 설정 

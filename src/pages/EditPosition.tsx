@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AccountService } from '../services/accountService';
 import { PortfolioService } from '../services/portfolioService';
-import { Account, NewPosition, Portfolio } from '../types';
+import { Account, Portfolio, Position } from '../types';
 
-export const NewPositionPage: React.FC = () => {
-  const { accountId } = useParams<{ accountId: string }>();
+export const EditPosition: React.FC = () => {
+  const { accountId, positionId } = useParams<{ accountId: string; positionId: string }>();
   const navigate = useNavigate();
   const [account, setAccount] = useState<Account>();
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+  const [position, setPosition] = useState<Position>();
   const [loading, setLoading] = useState(true);
 
   const [symbol, setSymbol] = useState('');
@@ -17,46 +18,36 @@ export const NewPositionPage: React.FC = () => {
   const [avgPrice, setAvgPrice] = useState(0);
   const [currentPrice, setCurrentPrice] = useState(0);
   const [portfolioId, setPortfolioId] = useState<number>();
+  const [category, setCategory] = useState<'LONG_TERM' | 'MID_TERM' | 'SHORT_TERM' | 'UNCATEGORIZED'>('UNCATEGORIZED');
 
   useEffect(() => {
     loadData();
-  }, [accountId]);
+  }, [accountId, positionId]);
 
   const loadData = async () => {
-    if (!accountId) return;
+    if (!accountId || !positionId) return;
 
     try {
-      console.log('데이터 로딩 시작... accountId:', accountId);
+      const [accountData, portfoliosData, positionData] = await Promise.all([
+        AccountService.getById(Number(accountId)),
+        PortfolioService.getAll(),
+        PortfolioService.getPositionById(Number(positionId))
+      ]);
 
-      // 포트폴리오 데이터 수정
-      await PortfolioService.fixPortfolioData();
-
-      // DB의 전체 포트폴리오 상태 확인
-      const allPortfolios = await PortfolioService.getAll();
-      console.log('DB의 전체 포트폴리오:', allPortfolios);
-
-      // 계좌 정보 로드
-      const accountData = await AccountService.getById(Number(accountId));
-      console.log('계좌 정보:', accountData);
-
-      if (!accountData) {
-        throw new Error('계좌를 찾을 수 없습니다.');
-      }
+      if (!accountData || !positionData) throw new Error('데이터를 찾을 수 없습니다.');
 
       setAccount(accountData);
+      setPortfolios(portfoliosData);
+      setPosition(positionData);
 
-      // 포트폴리오 로드
-      const accountPortfolios = await AccountService.getPortfolios(Number(accountId));
-      console.log('현재 계좌의 포트폴리오 목록:', accountPortfolios);
-
-      setPortfolios(accountPortfolios);
-      
-      if (accountPortfolios.length > 0) {
-        console.log('첫 번째 포트폴리오 선택:', accountPortfolios[0]);
-        setPortfolioId(accountPortfolios[0].id);
-      } else {
-        console.log('이 계좌에 포트폴리오가 없습니다.');
-      }
+      // 포지션 데이터로 폼 초기화
+      setSymbol(positionData.symbol);
+      setName(positionData.name);
+      setQuantity(positionData.quantity);
+      setAvgPrice(positionData.avgPrice);
+      setCurrentPrice(positionData.currentPrice);
+      setPortfolioId(positionData.portfolioId);
+      setCategory(positionData.strategyCategory);
     } catch (error) {
       console.error('데이터 로딩 중 오류:', error);
     } finally {
@@ -66,31 +57,22 @@ export const NewPositionPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!accountId || !portfolioId) return;
+    if (!accountId || !positionId || !portfolioId) return;
 
     try {
-      const selectedPortfolio = portfolios.find(p => p.id === portfolioId);
-      if (!selectedPortfolio?.config?.period) {
-        throw new Error('포트폴리오의 투자 기간이 설정되지 않았습니다.');
-      }
-
-      const position: NewPosition = {
+      await PortfolioService.updatePosition(Number(positionId), {
         portfolioId,
         symbol: symbol.trim().toUpperCase(),
         name: name.trim() || symbol.trim().toUpperCase(),
         quantity,
         avgPrice,
         currentPrice,
-        tradeDate: Date.now(),
-        strategyCategory: selectedPortfolio.config.period,
-        strategyTags: []
-      };
-
-      await PortfolioService.createPosition(position);
+        strategyCategory: category
+      });
       navigate(`/accounts/${accountId}`);
     } catch (error) {
-      console.error('포지션 생성 중 오류:', error);
-      alert('포지션 생성에 실패했습니다.');
+      console.error('포지션 수정 중 오류:', error);
+      alert('포지션 수정에 실패했습니다.');
     }
   };
 
@@ -102,11 +84,11 @@ export const NewPositionPage: React.FC = () => {
     );
   }
 
-  if (!account) {
+  if (!account || !position) {
     return (
       <div className="p-4">
         <div className="text-center">
-          <p className="text-gray-400">계좌를 찾을 수 없습니다.</p>
+          <p className="text-gray-400">데이터를 찾을 수 없습니다.</p>
           <button
             onClick={() => navigate('/accounts')}
             className="mt-4 text-blue-500 hover:text-blue-400"
@@ -118,47 +100,12 @@ export const NewPositionPage: React.FC = () => {
     );
   }
 
-  if (portfolios.length === 0) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-2xl font-bold mb-4">새 종목</h1>
-          <p className="text-gray-400 mb-4">포트폴리오가 없습니다.</p>
-          <button
-            onClick={() => navigate('/portfolios/new')}
-            className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            새 포트폴리오 만들기
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-8">새 종목</h1>
+        <h1 className="text-2xl font-bold mb-8">포지션 수정</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              포트폴리오 선택
-            </label>
-            <select
-              value={portfolioId}
-              onChange={(e) => setPortfolioId(Number(e.target.value))}
-              className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            >
-              {portfolios.map((portfolio) => (
-                <option key={portfolio.id} value={portfolio.id}>
-                  {portfolio.name} ({portfolio.config?.period || '미분류'})
-                </option>
-              ))}
-            </select>
-          </div>
-
           <div>
             <label className="block text-sm font-medium mb-2">
               종목 코드
@@ -184,6 +131,41 @@ export const NewPositionPage: React.FC = () => {
               className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="예: Apple Inc., 삼성전자"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              포트폴리오
+            </label>
+            <select
+              value={portfolioId}
+              onChange={(e) => setPortfolioId(Number(e.target.value))}
+              className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            >
+              {portfolios.map((portfolio) => (
+                <option key={portfolio.id} value={portfolio.id}>
+                  {portfolio.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              카테고리
+            </label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as 'LONG_TERM' | 'MID_TERM' | 'SHORT_TERM' | 'UNCATEGORIZED')}
+              className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {['LONG_TERM', 'MID_TERM', 'SHORT_TERM', 'UNCATEGORIZED'].map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -237,22 +219,19 @@ export const NewPositionPage: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate(`/accounts/${accountId}`)}
-              className="px-6 py-2 text-gray-400 hover:text-gray-300"
+              className="px-4 py-2 text-gray-400 hover:text-gray-300"
             >
               취소
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              disabled={!portfolioId || !symbol.trim() || quantity <= 0 || avgPrice <= 0 || currentPrice <= 0}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
             >
-              생성
+              저장
             </button>
           </div>
         </form>
       </div>
     </div>
   );
-};
-
-export default NewPositionPage; 
+}; 

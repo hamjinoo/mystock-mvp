@@ -6,10 +6,10 @@ export class TodoService {
     return db.todos.toArray();
   }
 
-  static async getByPortfolioGroupId(groupId: number): Promise<Todo[]> {
+  static async getByPortfolioId(portfolioId: number): Promise<Todo[]> {
     return db.todos
-      .where('portfolioGroupId')
-      .equals(groupId)
+      .where('portfolioId')
+      .equals(portfolioId)
       .toArray();
   }
 

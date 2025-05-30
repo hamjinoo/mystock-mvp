@@ -1,4 +1,3 @@
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { exportBackup, importBackup } from '../utils/backup';
@@ -51,74 +50,48 @@ export const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-lg mx-auto p-4">
-      <div className="flex items-center justify-between mb-6">
-        <button
-          onClick={() => navigate('/')}
-          className="text-sm text-gray-400 hover:text-white flex items-center"
-        >
-          <ArrowLeftIcon className="h-4 w-4 mr-1" />
-          뒤로
-        </button>
-        <h1 className="text-lg font-bold">설정</h1>
-        <div className="w-10" />
-      </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-2xl font-bold mb-8">설정</h1>
 
-      <div className="space-y-6">
-        <div className="bg-gray-800 rounded-lg p-4">
-          <h2 className="text-base font-bold mb-4">데이터 백업</h2>
+        <div className="bg-gray-800 rounded-lg p-6 mb-6">
+          <h2 className="text-lg font-medium mb-4">데이터 백업</h2>
           <div className="space-y-4">
             <div>
               <button
                 onClick={handleExport}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded text-sm hover:bg-blue-700"
+                className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
               >
-                백업 파일 다운로드
+                데이터 내보내기
               </button>
-              <p className="text-xs text-gray-400 mt-1">
-                현재 데이터를 JSON 파일로 내보냅니다.
-              </p>
             </div>
-
             <div>
               <input
-                type="file"
                 ref={fileInputRef}
-                onChange={handleImport}
+                type="file"
                 accept=".json"
+                onChange={handleImport}
                 className="hidden"
-                id="backup-file"
               />
-              <label
-                htmlFor="backup-file"
-                className="block w-full bg-gray-700 text-white py-2 px-4 rounded text-sm text-center cursor-pointer hover:bg-gray-600"
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600"
               >
-                백업 파일 불러오기
-              </label>
-              <p className="text-xs text-gray-400 mt-1">
-                백업 파일에서 데이터를 복원합니다.
-              </p>
+                데이터 가져오기
+              </button>
             </div>
-
-            {error && (
-              <div className="text-sm text-red-500 bg-red-500/10 p-3 rounded">
-                {error}
-              </div>
-            )}
-            {success && (
-              <div className="text-sm text-green-500 bg-green-500/10 p-3 rounded">
-                {success}
-              </div>
-            )}
           </div>
-        </div>
 
-        <div className="bg-gray-800 rounded-lg p-4">
-          <h2 className="text-base font-bold mb-4">앱 정보</h2>
-          <div className="text-sm text-gray-400">
-            <p>MyStock MVP</p>
-            <p>Version 1.0.0</p>
-          </div>
+          {error && (
+            <div className="mt-4 p-4 bg-red-900/50 text-red-400 rounded">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="mt-4 p-4 bg-green-900/50 text-green-400 rounded">
+              {success}
+            </div>
+          )}
         </div>
       </div>
     </div>

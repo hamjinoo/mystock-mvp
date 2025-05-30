@@ -1,230 +1,143 @@
-import React, { useState } from 'react';
-import { PortfolioCategory, Position } from '../types';
+import React, { useEffect, useState } from 'react';
+import { Position } from '../types';
 
-interface PositionFormProps {
-  position?: Position;
-  portfolioId: number;
-  onSave: (position: Position) => void;
+interface Props {
+  initialData?: Partial<Position>;
+  onSubmit: (data: Partial<Position>) => void;
   onCancel: () => void;
+  portfolioId?: number;
 }
 
-const DEFAULT_POSITION: Partial<Position> = {
+const defaultFormData: Partial<Position> = {
   symbol: '',
   name: '',
   quantity: 0,
   avgPrice: 0,
   currentPrice: 0,
-  category: PortfolioCategory.UNCATEGORIZED,
-  entryCount: 1,
-  maxEntries: 1,
+  strategyCategory: 'UNCATEGORIZED',
+  strategyTags: []
 };
 
-const getCategoryLabel = (category: PortfolioCategory) => {
-  switch (category) {
-    case PortfolioCategory.LONG_TERM:
-      return '장기 Core';
-    case PortfolioCategory.GROWTH:
-      return '성장 Satellite';
-    case PortfolioCategory.SHORT_TERM:
-      return '단기 기회';
-    case PortfolioCategory.CASH:
-      return '안전자산';
-    default:
-      return '미분류';
-  }
-};
-
-export const PositionForm: React.FC<PositionFormProps> = ({
-  position,
-  portfolioId,
-  onSave,
+export const PositionForm: React.FC<Props> = ({
+  initialData,
+  onSubmit,
   onCancel,
+  portfolioId
 }) => {
   const [formData, setFormData] = useState<Partial<Position>>({
-    ...DEFAULT_POSITION,
-    ...position,
+    ...defaultFormData,
+    ...initialData,
     portfolioId,
   });
 
+  useEffect(() => {
+    if (portfolioId) {
+      setFormData(prev => ({ ...prev, portfolioId }));
+    }
+  }, [portfolioId]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.symbol || !formData.quantity || !formData.avgPrice || !formData.currentPrice) {
-      return;
-    }
+    if (!formData.portfolioId) return;
 
-    onSave({
-      id: position?.id || Date.now(),
-      portfolioId,
-      symbol: formData.symbol,
-      name: formData.name || formData.symbol,
-      quantity: Number(formData.quantity),
-      avgPrice: Number(formData.avgPrice),
-      currentPrice: Number(formData.currentPrice),
-      tradeDate: position?.tradeDate || Date.now(),
-      strategyCategory: formData.category || PortfolioCategory.UNCATEGORIZED,
-      strategyTags: [],
-      category: formData.category || PortfolioCategory.UNCATEGORIZED,
-      strategy: formData.strategy,
-      entryCount: Number(formData.entryCount) || 1,
-      maxEntries: Number(formData.maxEntries) || 1,
-      targetQuantity: Number(formData.targetQuantity) || Number(formData.quantity),
-    });
-  };
+    const submitData: Partial<Position> = {
+      ...formData,
+      symbol: formData.symbol?.trim().toUpperCase(),
+      name: formData.name?.trim() || formData.symbol?.trim().toUpperCase(),
+      strategyCategory: formData.strategyCategory || 'UNCATEGORIZED',
+      strategyTags: formData.strategyTags || []
+    };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    onSubmit(submitData);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">종목 코드</label>
-          <input
-            type="text"
-            name="symbol"
-            value={formData.symbol}
-            onChange={handleChange}
-            className="w-full px-3 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">종목명</label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            className="w-full px-3 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            required
-          />
-        </div>
+      <div>
+        <label className="block text-sm font-medium mb-2">
+          종목 코드
+        </label>
+        <input
+          type="text"
+          value={formData.symbol || ''}
+          onChange={(e) => setFormData({ ...formData, symbol: e.target.value })}
+          className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="예: AAPL, 005930"
+          required
+        />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div>
+        <label className="block text-sm font-medium mb-2">
+          종목명
+        </label>
+        <input
+          type="text"
+          value={formData.name || ''}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="예: Apple Inc., 삼성전자"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-1">수량</label>
+          <label className="block text-sm font-medium mb-2">
+            수량
+          </label>
           <input
             type="number"
-            name="quantity"
-            value={formData.quantity}
-            onChange={handleChange}
-            className="w-full px-3 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            value={formData.quantity || 0}
+            onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
+            className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             min="0"
+            step="1"
             required
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">목표 수량</label>
-          <input
-            type="number"
-            name="targetQuantity"
-            value={formData.targetQuantity}
-            onChange={handleChange}
-            className="w-full px-3 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            min={formData.quantity}
-          />
-        </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-1">평균단가</label>
+          <label className="block text-sm font-medium mb-2">
+            평균단가
+          </label>
           <input
             type="number"
-            name="avgPrice"
-            value={formData.avgPrice}
-            onChange={handleChange}
-            className="w-full px-3 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            value={formData.avgPrice || 0}
+            onChange={(e) => setFormData({ ...formData, avgPrice: Number(e.target.value) })}
+            className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             min="0"
+            step="0.01"
             required
           />
         </div>
+
         <div>
-          <label className="block text-sm font-medium mb-1">현재가</label>
+          <label className="block text-sm font-medium mb-2">
+            현재가
+          </label>
           <input
             type="number"
-            name="currentPrice"
-            value={formData.currentPrice}
-            onChange={handleChange}
-            className="w-full px-3 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            value={formData.currentPrice || 0}
+            onChange={(e) => setFormData({ ...formData, currentPrice: Number(e.target.value) })}
+            className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             min="0"
+            step="0.01"
             required
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">카테고리</label>
-          <select
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            className="w-full px-3 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          >
-            {Object.values(PortfolioCategory).map((category) => (
-              <option key={category} value={category}>
-                {getCategoryLabel(category)}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">전략</label>
-          <input
-            type="text"
-            name="strategy"
-            value={formData.strategy}
-            onChange={handleChange}
-            className="w-full px-3 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            placeholder="예: 가치투자, 모멘텀 등"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">현재 매수 횟수</label>
-          <input
-            type="number"
-            name="entryCount"
-            value={formData.entryCount}
-            onChange={handleChange}
-            className="w-full px-3 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            min="1"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">총 매수 횟수</label>
-          <input
-            type="number"
-            name="maxEntries"
-            value={formData.maxEntries}
-            onChange={handleChange}
-            className="w-full px-3 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            min={formData.entryCount}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="flex justify-end space-x-3 pt-4">
+      <div className="flex justify-end space-x-4">
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-gray-400 hover:text-white"
+          className="px-6 py-2 text-gray-400 hover:text-gray-300"
         >
           취소
         </button>
         <button
           type="submit"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
           저장
         </button>

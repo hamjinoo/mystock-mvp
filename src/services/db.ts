@@ -1,70 +1,96 @@
-import Dexie, { Table } from 'dexie';
+import Dexie, { Table, Transaction } from 'dexie';
 import {
+    Account,
     Memo,
     NewMemo,
     NewPortfolio,
-    NewPortfolioGroup,
     NewPosition,
     NewTodo,
     Portfolio,
-    PortfolioCategory,
-    PortfolioGroup,
     Position,
     Todo
 } from '../types';
 
 export class MyStockDatabase extends Dexie {
-  portfolioGroups!: Table<PortfolioGroup>;
   portfolios!: Table<Portfolio>;
   positions!: Table<Position>;
   todos!: Table<Todo>;
   memos!: Table<Memo>;
+  accounts!: Table<Account>;
 
   constructor() {
-    super('MyStockDatabase');
+    super('MyStockDB');
     
     this.version(1).stores({
-      portfolioGroups: '++id',
-      portfolios: '++id, groupId',
-      positions: '++id, portfolioId',
-      todos: '++id, portfolioGroupId'
+      accounts: '++id, broker, accountNumber, currency',
+      portfolios: '++id, accountId, name, currency',
+      positions: '++id, portfolioId, symbol, strategyCategory',
+      todos: '++id, portfolioId, completed, createdAt'
+    });
+
+    this.version(7).upgrade((tx: Transaction) => {
+      return tx.table('todos').toCollection().modify((todo: any) => {
+        if ('portfolioGroupId' in todo) {
+          todo.portfolioId = todo.portfolioGroupId;
+          delete todo.portfolioGroupId;
+        }
+      });
     });
   }
 
-  async addPortfolioGroup(group: NewPortfolioGroup): Promise<number> {
-    return await this.portfolioGroups.add(group as PortfolioGroup);
+  async getAccounts(): Promise<Account[]> {
+    return await this.accounts.toArray();
   }
 
-  async updatePortfolioGroup(id: number, group: Partial<PortfolioGroup>) {
-    return await this.portfolioGroups.update(id, group);
+  async getAccountById(id: number): Promise<Account | undefined> {
+    return await this.accounts.get(id);
   }
 
-  async deletePortfolioGroup(id: number) {
-    await this.transaction('rw', [this.portfolioGroups, this.portfolios, this.positions, this.todos], async () => {
-      const portfolios = await this.portfolios.where('groupId').equals(id).toArray();
-      const portfolioIds = portfolios.map(p => p.id);
+  async addAccount(account: Omit<Account, 'id'>): Promise<number> {
+    const accountData = {
+      ...account,
+      createdAt: Date.now()
+    } as Account;
+    return await this.accounts.add(accountData);
+  }
 
-      await Promise.all([
-        this.portfolioGroups.delete(id),
-        ...portfolioIds.map(pid => this.positions.where('portfolioId').equals(pid).delete()),
-        this.portfolios.where('groupId').equals(id).delete(),
-        this.todos.where('portfolioGroupId').equals(id).delete()
-      ]);
-    });
+  async updateAccount(id: number, account: Partial<Account>): Promise<void> {
+    await this.accounts.update(id, account);
+  }
+
+  async deleteAccount(id: number): Promise<void> {
+    // 계좌에 속한 포트폴리오와 포지션도 함께 삭제
+    const portfolios = await this.portfolios.where('accountId').equals(id).toArray();
+    const portfolioIds = portfolios.map(p => p.id);
+    
+    // 포지션 삭제
+    await this.positions.where('portfolioId').anyOf(portfolioIds).delete();
+    // 포트폴리오 삭제
+    await this.portfolios.where('accountId').equals(id).delete();
+    // 계좌 삭제
+    await this.accounts.delete(id);
   }
 
   async addPortfolio(portfolio: NewPortfolio): Promise<number> {
-    return await this.portfolios.add(portfolio as Portfolio);
+    const portfolios = await this.portfolios.toArray();
+    const order = portfolios.length;
+    return await this.portfolios.add({ ...portfolio, order } as Portfolio);
   }
 
   async addPosition(position: NewPosition): Promise<number> {
+    const positionsInPortfolio = await this.positions
+      .where('portfolioId')
+      .equals(position.portfolioId)
+      .toArray();
+
     const positionWithDefaults = {
       ...position,
-      strategyCategory: position.strategyCategory || PortfolioCategory.UNCATEGORIZED,
+      strategyCategory: position.strategyCategory || 'UNCATEGORIZED',
       strategyTags: position.strategyTags || [],
       entryCount: position.entryCount || 1,
       maxEntries: position.maxEntries || 1,
       targetQuantity: position.targetQuantity || position.quantity,
+      order: positionsInPortfolio.length
     } as Position;
     
     return await this.positions.add(positionWithDefaults);
@@ -115,23 +141,23 @@ export class MyStockDatabase extends Dexie {
 
   async exportData() {
     try {
-      const [portfolioGroups, portfolios, positions, todos, memos] = await Promise.all([
-        this.portfolioGroups.toArray(),
+      const [portfolios, positions, todos, memos, accounts] = await Promise.all([
         this.portfolios.toArray(),
         this.positions.toArray(),
         this.todos.toArray(),
-        this.memos.toArray()
+        this.memos.toArray(),
+        this.accounts.toArray()
       ]);
 
       return {
-        version: 4,
+        version: 7,
         timestamp: Date.now(),
         data: {
-          portfolioGroups,
           portfolios,
           positions,
           todos,
-          memos
+          memos,
+          accounts
         }
       };
     } catch (error) {
@@ -147,22 +173,22 @@ export class MyStockDatabase extends Dexie {
       }
 
       await this.transaction('rw', 
-        [this.portfolioGroups, this.portfolios, this.positions, this.todos, this.memos], 
+        [this.portfolios, this.positions, this.todos, this.memos, this.accounts], 
         async () => {
           await Promise.all([
-            this.portfolioGroups.clear(),
             this.portfolios.clear(),
             this.positions.clear(),
             this.todos.clear(),
-            this.memos.clear()
+            this.memos.clear(),
+            this.accounts.clear()
           ]);
 
           await Promise.all([
-            this.portfolioGroups.bulkAdd(importData.data.portfolioGroups || []),
             this.portfolios.bulkAdd(importData.data.portfolios),
             this.positions.bulkAdd(importData.data.positions),
             this.todos.bulkAdd(importData.data.todos),
-            this.memos.bulkAdd(importData.data.memos)
+            this.memos.bulkAdd(importData.data.memos),
+            this.accounts.bulkAdd(importData.data.accounts || [])
           ]);
         }
       );
@@ -173,35 +199,23 @@ export class MyStockDatabase extends Dexie {
       throw error;
     }
   }
-
-  async initializeFromServer() {
-    try {
-      const response = await fetch('/backup/mystock-data.json');
-      if (response.ok) {
-        const serverData = await response.json();
-        await this.importData(serverData);
-        console.log('서버 데이터 복원 완료');
-        return true;
-      }
-    } catch (error) {
-      console.warn('서버 데이터 복원 실패:', error);
-    }
-    return false;
-  }
 }
 
 export const db = new MyStockDatabase();
 
 // 데이터베이스 연결 상태 확인
 db.on('ready', () => console.log('데이터베이스가 준비되었습니다.'));
-db.on('versionchange', () => {
-  console.log('데이터베이스 버전이 변경되었습니다.');
-  window.location.reload();
-});
 
 // 오류 처리
-db.open().catch((err: Error) => {
+db.open().catch(async (err: Error) => {
   console.error('데이터베이스 오류:', err);
+  
+  if (err.name === 'SchemaError') {
+    console.log('스키마 오류로 인해 데이터베이스를 재설정합니다...');
+    await db.delete();
+    window.location.reload();
+  }
 });
 
-db.initializeFromServer().catch(console.error); 
+// 서버 초기화 시도를 제거하고 로컬 데이터베이스만 사용
+// db.initializeFromServer().catch(console.error); 

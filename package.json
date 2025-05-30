@@ -1,16 +1,14 @@
 {
   "name": "mystock-mvp",
   "version": "0.1.0",
-  "homepage": "/jinwoo",
+  "homepage": "/mystock-mvp",
   "private": true,
   "dependencies": {
+    "@headlessui/react": "^2.2.4",
+    "@hello-pangea/dnd": "^18.0.1",
     "@heroicons/react": "^2.2.0",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/typography": "^0.5.16",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^14.0.0",
-    "@testing-library/user-event": "^14.0.0",
-    "@types/jest": "^29.5.0",
     "@types/react": "^18.0.0",
     "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dom": "^18.0.0",
@@ -26,37 +24,16 @@
     "react-dom": "^18.2.0",
     "react-markdown": "^8.0.7",
     "react-router-dom": "^6.22.3",
-    "react-scripts": "5.0.1",
+    "recharts": "^2.15.3",
     "typescript": "^4.4.2",
-    "web-vitals": "^2.1.0",
     "zod": "^3.25.34"
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc --skipLibCheck && vite build",
+    "build": "tsc && vite build",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "deploy": "gh-pages -d dist"
   },
   "devDependencies": {
     "@types/node": "^22.15.24",
@@ -70,15 +47,6 @@
     "postcss-normalize": "^13.0.1",
     "postcss-preset-env": "^10.2.0",
     "tailwindcss": "^3.4.1",
-    "vite": "^6.3.5"
-  },
-  "jest": {
-    "moduleNameMapper": {
-      "^react-router-dom$": "<rootDir>/node_modules/react-router-dom/dist/index.js",
-      "^react-markdown$": "<rootDir>/src/__mocks__/react-markdown.tsx"
-    },
-    "transformIgnorePatterns": [
-      "node_modules/(?!(react-router-dom)/.*)"
-    ]
+    "vite": "^4.5.2"
   }
 }

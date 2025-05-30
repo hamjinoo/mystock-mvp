@@ -1,14 +1,8 @@
 // 기본 타입 정의
-export interface BasePortfolioGroup {
-  name: string;
-}
-
 export interface BasePortfolio {
-  groupId: number;
-  broker: string;
-  accountNumber: string;
-  accountName: string;
+  name: string;
   currency: "KRW" | "USD";
+  accountId: number;
 }
 
 export interface BasePosition {
@@ -18,7 +12,7 @@ export interface BasePosition {
   avgPrice: number;
   currentPrice: number;
   tradeDate: string;
-  strategyCategory: PortfolioCategory;
+  strategyCategory: 'LONG_TERM' | 'MID_TERM' | 'SHORT_TERM' | 'UNCATEGORIZED';
   strategyTags?: string[];
 }
 
@@ -30,22 +24,23 @@ export interface BaseTodo {
 }
 
 // DB에 저장된 엔티티 타입
-export interface PortfolioGroup {
+export interface Account {
   id: number;
-  name: string;
-  config?: PortfolioGroupConfig;
-}
-
-export interface Portfolio {
-  id: number;
-  groupId: number;
-  name?: string;
   broker: string;
   accountNumber: string;
   accountName: string;
   currency: "KRW" | "USD";
+  createdAt: number;
+}
+
+export interface Portfolio {
+  id: number;
+  name: string;
+  currency: "KRW" | "USD";
+  accountId: number;
   config?: PortfolioConfig;
   positions?: Position[];
+  order?: number;
 }
 
 export interface Position {
@@ -64,11 +59,12 @@ export interface Position {
   entryCount?: number;
   maxEntries?: number;
   targetQuantity?: number;
+  order?: number;
 }
 
 export interface Todo {
   id: number;
-  portfolioGroupId: number;
+  portfolioId: number;
   text: string;
   content?: string;
   completed: boolean;
@@ -88,35 +84,32 @@ export interface StrategyConfig {
 }
 
 export interface CategoryConfig {
-  targetPercentage: number;      // 목표 비중 (%)
-  maxStockPercentage: number;    // 종목당 최대 비중 (%)
-  maxEntries: number;            // 최대 분할 매수 횟수
+  targetPercentage: number;
+  maxStockPercentage: number;
+  maxEntries: number;
 }
 
 export interface PortfolioConfig {
-  totalCapital: number;
-  categoryAllocations: Record<PortfolioCategory, CategoryAllocation>;
-}
-
-export interface PortfolioGroupConfig {
+  period?: PortfolioCategory;
+  description?: string;
   targetAllocation: number;
-  riskLevel: number;
-  categoryAllocations: Record<PortfolioCategory, CategoryAllocation>;
+  categoryAllocations?: {
+    [key in PortfolioCategory]?: CategoryConfig;
+  };
 }
 
 // 카테고리 열거형
-export enum PortfolioCategory {
-  LONG_TERM = 'LONG_TERM',
-  GROWTH = 'GROWTH',
-  SHORT_TERM = 'SHORT_TERM',
-  CASH = 'CASH',
-  UNCATEGORIZED = 'UNCATEGORIZED'
+export type PortfolioCategory = 'LONG_TERM' | 'MID_TERM' | 'SHORT_TERM' | 'UNCATEGORIZED';
+
+export interface InvestmentCategory {
+  name: string;
+  targetAllocation: number;
+  maxStocks: number;
+  maxStockPercentage: number;
 }
 
 export interface CategoryAllocation {
   targetPercentage: number;
-  maxStockPercentage: number;
-  maxEntries: number;
 }
 
 // 통합 뷰를 위한 인터페이스
@@ -130,7 +123,6 @@ export interface ConsolidatedPosition {
 }
 
 export interface StrategySnapshot {
-  groupId: number;
   name: string;
   totalValue: number;
   targetValue: number;
@@ -146,9 +138,11 @@ export interface BrokerSnapshot {
 }
 
 // 새로운 엔티티 생성을 위한 타입
-export type NewPortfolioGroup = Omit<PortfolioGroup, 'id'>;
 export type NewPortfolio = Omit<Portfolio, 'id'>;
 export type NewPosition = Omit<Position, 'id'>;
+export type NewAccount = Omit<Account, 'id'>;
+export type NewMemo = Omit<Memo, 'id'>;
+export type NewTodo = Omit<Todo, 'id'>;
 
 // 기존 메모 관련 타입 유지
 export interface Memo {
@@ -159,7 +153,14 @@ export interface Memo {
   updatedAt: number;
 }
 
-export type NewMemo = Omit<Memo, 'id'>;
-
 // Todo 관련 타입 수정
-export type NewTodo = Omit<Todo, 'id'>; 
+export interface Todo {
+  id: number;
+  portfolioId: number;
+  text: string;
+  content?: string;
+  completed: boolean;
+  done?: boolean;
+  createdAt: number;
+  completedAt?: number | null;
+} 

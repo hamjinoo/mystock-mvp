@@ -41,13 +41,19 @@
 - 할 일 완료/미완료 토글
 - 할 일 삭제
 
+## 문서
+
+- [프로젝트 구조](docs/PROJECT_STRUCTURE.md) - 프로젝트의 디렉토리 구조, 라우팅, 컴포넌트에 대한 설명
+
 ## 기술 스택
 
 - React
 - TypeScript
+- Vite
 - TailwindCSS
-- IndexedDB (로컬 데이터 저장)
-- React Router (페이지 라우팅)
+- Dexie.js (IndexedDB)
+- React Router
+- Recharts
 
 ## 테스트
 
@@ -75,20 +81,20 @@ Jest와 React Testing Library를 사용하여 다음 항목들을 테스트합�
 ### 3. 기본 앱 테스트 (`App.test.tsx`)
 - 앱 기본 렌더링
 
-## 설치 및 실행
+## 개발 환경 설정
 
 ```bash
 # 의존성 설치
 npm install
 
 # 개발 서버 실행
-npm start
+npm run dev
+
+# 빌드
+npm run build
 
 # 테스트 실행
-npm test
-
-# 프로덕션 빌드
-npm run build
+npm run test
 ```
 
 ## 향후 계획

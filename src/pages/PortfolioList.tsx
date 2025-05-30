@@ -1,38 +1,47 @@
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { TrashIcon } from '@heroicons/react/24/outline';
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { PortfolioGroupService } from '../services/portfolioGroupService';
-import { PortfolioGroup } from '../types';
+import { Link } from 'react-router-dom';
+import { PortfolioService } from '../services/portfolioService';
+import { Portfolio } from '../types';
+
+interface PortfolioWithValue extends Portfolio {
+  totalValue: number;
+}
 
 export const PortfolioList: React.FC = () => {
-  const navigate = useNavigate();
-  const [groups, setGroups] = useState<PortfolioGroup[]>([]);
+  const [portfolios, setPortfolios] = useState<PortfolioWithValue[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadGroups();
+    loadData();
   }, []);
 
-  const loadGroups = async () => {
+  const loadData = async () => {
     try {
-      const data = await PortfolioGroupService.getAll();
-      setGroups(data);
+      const portfoliosData = await PortfolioService.getAll();
+      const portfoliosWithValue = await Promise.all(
+        portfoliosData.map(async (portfolio) => {
+          const summary = await PortfolioService.getPortfolioSummary(portfolio.id);
+          return { ...portfolio, totalValue: summary.totalValue };
+        })
+      );
+      setPortfolios(portfoliosWithValue);
     } catch (error) {
-      console.error('포트폴리오 그룹 로딩 중 오류:', error);
+      console.error('데이터 로딩 중 오류:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (groupId: number) => {
-    if (!window.confirm('이 포트폴리오 그룹을 삭제하시겠습니까?')) return;
+  const handleDeletePortfolio = async (id: number) => {
+    if (!window.confirm('정말 이 포트폴리오를 삭제하시겠습니까?')) return;
 
     try {
-      await PortfolioGroupService.delete(groupId);
-      await loadGroups();
+      await PortfolioService.delete(id);
+      setPortfolios(portfolios.filter(p => p.id !== id));
     } catch (error) {
-      console.error('포트폴리오 그룹 삭제 중 오류:', error);
-      alert('포트폴리오 그룹 삭제에 실패했습니다.');
+      console.error('포트폴리오 삭제 중 오류:', error);
+      alert('포트폴리오 삭제에 실패했습니다.');
     }
   };
 
@@ -45,64 +54,83 @@ export const PortfolioList: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">포트폴리오 그룹</h1>
-        <Link
-          to="/portfolio-groups/new"
-          className="flex items-center px-4 py-2 bg-blue-500 rounded hover:bg-blue-600"
-        >
-          <PlusIcon className="h-5 w-5 mr-1" />
-          새 그룹 추가
-        </Link>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {groups.map((group) => (
-          <div
-            key={group.id}
-            className="bg-gray-800 rounded-lg p-6 hover:bg-gray-700 transition-colors"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <h2 className="text-xl font-semibold">{group.name}</h2>
-              <button
-                onClick={() => handleDelete(group.id)}
-                className="text-gray-400 hover:text-red-500"
-          >
-                ×
-          </button>
-        </div>
-            <div className="space-y-2">
-              <p className="text-sm text-gray-400">
-                목표 비중: {group.config?.targetAllocation || 0}%
-              </p>
-              <p className="text-sm text-gray-400">
-                위험 수준: {group.config?.riskLevel || 0}
-              </p>
-                    </div>
-            <div className="mt-4 flex justify-end">
+    <div className="p-4">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold mb-4">포트폴리오</h1>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {portfolios.map((portfolio) => (
+              <div key={portfolio.id} className="bg-gray-800 rounded-lg p-4 relative">
                 <button
-                onClick={() => navigate(`/portfolio-groups/${group.id}/portfolios/new`)}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  onClick={() => handleDeletePortfolio(portfolio.id)}
+                  className="absolute top-2 right-2 p-2 text-gray-400 hover:text-red-500"
                 >
-                계좌 추가
+                  <TrashIcon className="h-5 w-5" />
                 </button>
-              </div>
-          </div>
-        ))}
+                <h2 className="text-xl font-bold mb-2">{portfolio.name}</h2>
+                <div className="space-y-2 mb-4">
+                  <p className="text-sm text-gray-400">
+                    보유 종목 {portfolio.positions?.length || 0}개
+                  </p>
+                  <p className="text-sm">
+                    <span className="text-gray-400">총자산: </span>
+                    {new Intl.NumberFormat('ko-KR', {
+                      style: 'currency',
+                      currency: portfolio.currency
+                    }).format(portfolio.totalValue)}
+                  </p>
+                  <p className="text-sm">
+                    <span className="text-gray-400">투자 기간: </span>
+                    {portfolio.config?.period || '미설정'}
+                  </p>
+                </div>
+                {portfolio.positions && portfolio.positions.length > 0 && (
+                  <div className="space-y-2 mb-4">
+                    <p className="text-sm font-medium text-gray-400">보유 종목:</p>
+                    {portfolio.positions.map(position => {
+                      const value = position.quantity * position.currentPrice;
+                      const allocation = portfolio.totalValue > 0 
+                        ? (value / portfolio.totalValue) * 100 
+                        : 0;
 
-        {groups.length === 0 && (
-          <div className="col-span-full text-center py-8">
-            <p className="text-gray-400 mb-4">아직 포트폴리오 그룹이 없습니다.</p>
+                      return (
+                        <div key={position.id} className="flex justify-between items-center p-2 hover:bg-gray-700 rounded">
+                          <div className="text-sm">
+                            <div>{position.name}</div>
+                            <div className="text-gray-400">{position.symbol}</div>
+                          </div>
+                          <div className="text-sm text-right">
+                            <div>
+                              {new Intl.NumberFormat('ko-KR', {
+                                style: 'currency',
+                                currency: portfolio.currency
+                              }).format(value)}
+                            </div>
+                            <div className="text-gray-400">
+                              {allocation.toFixed(1)}%
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                <Link
+                  to={`/portfolios/${portfolio.id}`}
+                  className="text-blue-500 hover:text-blue-400 text-sm"
+                >
+                  자세히 보기 →
+                </Link>
+              </div>
+            ))}
             <Link
-              to="/portfolio-groups/new"
-              className="inline-flex items-center px-4 py-2 bg-blue-500 rounded hover:bg-blue-600"
+              to="/portfolios/new"
+              className="bg-gray-800 rounded-lg p-4 flex items-center justify-center hover:bg-gray-700 border-2 border-dashed border-gray-600"
             >
-              <PlusIcon className="h-5 w-5 mr-1" />
-              첫 그룹 추가
+              <span className="text-gray-400">+ 새 포트폴리오</span>
             </Link>
+          </div>
         </div>
-        )}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PortfolioService } from '../services/portfolioService';
-import { Portfolio, PortfolioCategory } from '../types';
+import { Portfolio } from '../types';
 
 export const PortfolioConfigPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -49,29 +49,24 @@ export const PortfolioConfigPage: React.FC = () => {
           ...portfolio.config,
           totalCapital,
           categoryAllocations: portfolio.config?.categoryAllocations || {
-            [PortfolioCategory.LONG_TERM]: {
+            'LONG_TERM': {
               targetPercentage: 50,
               maxStockPercentage: 10,
               maxEntries: 3
             },
-            [PortfolioCategory.GROWTH]: {
+            'MID_TERM': {
               targetPercentage: 30,
               maxStockPercentage: 7.5,
               maxEntries: 2
             },
-            [PortfolioCategory.SHORT_TERM]: {
+            'SHORT_TERM': {
               targetPercentage: 5,
               maxStockPercentage: 5,
               maxEntries: 1
             },
-            [PortfolioCategory.CASH]: {
+            'UNCATEGORIZED': {
               targetPercentage: 15,
               maxStockPercentage: 100,
-              maxEntries: 1
-            },
-            [PortfolioCategory.UNCATEGORIZED]: {
-              targetPercentage: 0,
-              maxStockPercentage: 0,
               maxEntries: 1
             }
           }

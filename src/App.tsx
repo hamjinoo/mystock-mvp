@@ -1,11 +1,15 @@
 import { ChartBarIcon, Cog6ToothIcon, DocumentTextIcon, HomeIcon } from '@heroicons/react/24/outline';
 import React, { Suspense } from 'react';
 import { Link, Navigate, Route, Routes } from 'react-router-dom';
+import { AccountDetailPage } from './pages/AccountDetail';
+import { AccountList } from './pages/AccountList';
+import { EditAccountPage } from './pages/EditAccount';
+import { EditPosition as EditPositionPage } from './pages/EditPosition';
 import { MainPage } from './pages/MainPage';
 import { MemoDetailPage } from './pages/MemoDetailPage';
 import { MemoListPage } from './pages/MemoListPage';
+import { NewAccount } from './pages/NewAccount';
 import { NewPortfolioPage } from './pages/NewPortfolio';
-import { NewPortfolioGroupPage } from './pages/NewPortfolioGroup';
 import { NewPositionPage } from './pages/NewPosition';
 import { PortfolioConfigPage } from './pages/PortfolioConfigPage';
 import { PortfolioDetail } from './pages/PortfolioDetail';
@@ -20,12 +24,16 @@ export const App: React.FC = () => {
         <main className="flex-1 pb-16">
           <Routes>
             <Route path="/" element={<MainPage />} />
-            <Route path="/portfolio-groups" element={<PortfolioList />} />
-            <Route path="/portfolio-groups/new" element={<NewPortfolioGroupPage />} />
-            <Route path="/portfolio-groups/:groupId/portfolios/new" element={<NewPortfolioPage />} />
-            <Route path="/portfolios/:id" element={<PortfolioDetail />} />
-            <Route path="/portfolios/:id/config" element={<PortfolioConfigPage />} />
-            <Route path="/portfolios/:id/positions/new" element={<NewPositionPage />} />
+            <Route path="/portfolios" element={<PortfolioList />} />
+            <Route path="/portfolios/new" element={<NewPortfolioPage />} />
+            <Route path="/portfolios/:portfolioId" element={<PortfolioDetail />} />
+            <Route path="/portfolios/:portfolioId/config" element={<PortfolioConfigPage />} />
+            <Route path="/accounts" element={<AccountList />} />
+            <Route path="/accounts/new" element={<NewAccount />} />
+            <Route path="/accounts/:accountId" element={<AccountDetailPage />} />
+            <Route path="/accounts/:accountId/edit" element={<EditAccountPage />} />
+            <Route path="/accounts/:accountId/positions/new" element={<NewPositionPage />} />
+            <Route path="/accounts/:accountId/positions/:positionId/edit" element={<EditPositionPage />} />
             <Route path="/memos" element={<MemoListPage />} />
             <Route path="/memos/:id" element={<MemoDetailPage />} />
             <Route path="/settings" element={<SettingsPage />} />
@@ -45,18 +53,18 @@ export const App: React.FC = () => {
                 <span className="text-xs mt-1">홈</span>
               </Link>
               <Link
-                to="/portfolio-groups"
+                to="/portfolios"
                 className="flex flex-col items-center p-2 text-gray-400 hover:text-white"
               >
                 <ChartBarIcon className="h-6 w-6" />
                 <span className="text-xs mt-1">포트폴리오</span>
               </Link>
               <Link
-                to="/memos"
+                to="/accounts"
                 className="flex flex-col items-center p-2 text-gray-400 hover:text-white"
               >
                 <DocumentTextIcon className="h-6 w-6" />
-                <span className="text-xs mt-1">메모장</span>
+                <span className="text-xs mt-1">계좌</span>
               </Link>
               <Link
                 to="/settings"
