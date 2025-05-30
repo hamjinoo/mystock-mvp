@@ -49,7 +49,8 @@ export const NewPortfolioModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
         config: {
           targetAllocation: 0,
           period: 'UNCATEGORIZED',
-          description: '새 포트폴리오'
+          description: '새 포트폴리오',
+          totalCapital: 0
         }
       };
 

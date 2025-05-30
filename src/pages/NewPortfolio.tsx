@@ -76,7 +76,8 @@ export const NewPortfolioPage: React.FC = () => {
         config: {
           targetAllocation: 0,
           period: selectedPeriod === 'CUSTOM' ? 'UNCATEGORIZED' : selectedPeriod,
-          description: selectedPeriod === 'CUSTOM' ? customDescription : PERIOD_CONFIGS[selectedPeriod].description
+          description: selectedPeriod === 'CUSTOM' ? customDescription : PERIOD_CONFIGS[selectedPeriod].description,
+          totalCapital: 0
         }
       };
 

@@ -10,6 +10,7 @@ const DEFAULT_CONFIG: PortfolioConfig = {
   targetAllocation: 0,
   period: 'UNCATEGORIZED',
   description: '',
+  totalCapital: 0,
   categoryAllocations: {
     LONG_TERM: {
       targetPercentage: 50,

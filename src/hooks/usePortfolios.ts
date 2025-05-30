@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { PortfolioService } from '../services/portfolioService';
-import { Portfolio } from '../types';
+import { NewPortfolio, Portfolio } from '../types';
 
 export function usePortfolios() {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
@@ -26,14 +26,13 @@ export function usePortfolios() {
 
   const createPortfolio = async (name: string) => {
     try {
-      await PortfolioService.create({
-        groupId: 0, // 기본 그룹
-        broker: '',
-        accountNumber: '',
-        accountName: name,
-        currency: 'KRW',
+      const newPortfolio: NewPortfolio = {
+        name,
+        currency: "KRW",
+        accountId: 0, // 기본 계좌
         config: {
           totalCapital: 0,
+          targetAllocation: 0,
           categoryAllocations: {
             'LONG_TERM': {
               targetPercentage: 50,
@@ -57,7 +56,8 @@ export function usePortfolios() {
             }
           }
         }
-      });
+      };
+      await PortfolioService.create(newPortfolio);
       await loadPortfolios();
     } catch (err) {
       throw err instanceof Error ? err : new Error('포트폴리오 생성 중 오류가 발생했습니다.');

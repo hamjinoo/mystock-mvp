@@ -41,6 +41,9 @@ export interface Portfolio {
   config?: PortfolioConfig;
   positions?: Position[];
   order?: number;
+  accountName?: string;
+  broker?: string;
+  accountNumber?: string;
 }
 
 export interface Position {
@@ -93,6 +96,7 @@ export interface PortfolioConfig {
   period?: PortfolioCategory;
   description?: string;
   targetAllocation: number;
+  totalCapital: number;
   categoryAllocations?: {
     [key in PortfolioCategory]?: CategoryConfig;
   };

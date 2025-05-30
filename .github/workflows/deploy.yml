@@ -1,37 +1,33 @@
-name: Deploy to GitHub Pages
+name: Deploy to FTP
 
 on:
   push:
     branches:
-      - main
-
-# GitHub Actions에 권한 설정 추가
-permissions:
-  contents: write
+      - main  # main 브랜치에 push될 때 실행
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
+      - uses: actions/checkout@v2
+      
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v2
         with:
           node-version: '18'
-          cache: 'npm'
-
+          
       - name: Install Dependencies
         run: npm ci
-
+        
       - name: Build
         run: npm run build
-
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+        
+      - name: Deploy to FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          branch: gh-pages
-          folder: dist
-          token: ${{ secrets.GITHUB_TOKEN }} # GITHUB_TOKEN 추가 
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: / 

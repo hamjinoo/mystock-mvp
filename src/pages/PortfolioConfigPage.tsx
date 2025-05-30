@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PortfolioService } from '../services/portfolioService';
-import { Portfolio } from '../types';
+import { Portfolio, PortfolioConfig } from '../types';
 
 export const PortfolioConfigPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,9 +23,9 @@ export const PortfolioConfigPage: React.FC = () => {
       const data = await PortfolioService.getById(Number(id));
       if (data) {
         setPortfolio(data);
-        setAccountName(data.accountName);
-        setBroker(data.broker);
-        setAccountNumber(data.accountNumber);
+        setAccountName(data.accountName || '');
+        setBroker(data.broker || '');
+        setAccountNumber(data.accountNumber || '');
         setTotalCapital(data.config?.totalCapital || 0);
       }
     } catch (error) {
@@ -40,39 +40,43 @@ export const PortfolioConfigPage: React.FC = () => {
     if (!portfolio) return;
 
     try {
+      const updatedConfig: PortfolioConfig = {
+        totalCapital,
+        categoryAllocations: portfolio.config?.categoryAllocations || {
+          'LONG_TERM': {
+            targetPercentage: 50,
+            maxStockPercentage: 10,
+            maxEntries: 3
+          },
+          'MID_TERM': {
+            targetPercentage: 30,
+            maxStockPercentage: 7.5,
+            maxEntries: 2
+          },
+          'SHORT_TERM': {
+            targetPercentage: 5,
+            maxStockPercentage: 5,
+            maxEntries: 1
+          },
+          'UNCATEGORIZED': {
+            targetPercentage: 15,
+            maxStockPercentage: 100,
+            maxEntries: 1
+          }
+        },
+        period: portfolio.config?.period,
+        description: portfolio.config?.description || '',
+        targetAllocation: portfolio.config?.targetAllocation || 0
+      };
+
       await PortfolioService.update(portfolio.id, {
         ...portfolio,
         accountName: accountName.trim(),
         broker: broker.trim(),
         accountNumber: accountNumber.trim(),
-        config: {
-          ...portfolio.config,
-          totalCapital,
-          categoryAllocations: portfolio.config?.categoryAllocations || {
-            'LONG_TERM': {
-              targetPercentage: 50,
-              maxStockPercentage: 10,
-              maxEntries: 3
-            },
-            'MID_TERM': {
-              targetPercentage: 30,
-              maxStockPercentage: 7.5,
-              maxEntries: 2
-            },
-            'SHORT_TERM': {
-              targetPercentage: 5,
-              maxStockPercentage: 5,
-              maxEntries: 1
-            },
-            'UNCATEGORIZED': {
-              targetPercentage: 15,
-              maxStockPercentage: 100,
-              maxEntries: 1
-            }
-          }
-        }
+        config: updatedConfig
       });
-      navigate(`/portfolios/${id}`);
+      navigate(`/accounts/${portfolio.accountId}`);
     } catch (error) {
       console.error('포트폴리오 업데이트 중 오류:', error);
       alert('포트폴리오 설정 저장에 실패했습니다.');
@@ -84,7 +88,7 @@ export const PortfolioConfigPage: React.FC = () => {
 
     try {
       await PortfolioService.delete(portfolio.id);
-      navigate(`/portfolio-groups/${portfolio.groupId}`);
+      navigate(`/accounts/${portfolio.accountId}`);
     } catch (error) {
       console.error('포트폴리오 삭제 중 오류:', error);
       alert('포트폴리오 삭제에 실패했습니다.');
@@ -177,7 +181,7 @@ export const PortfolioConfigPage: React.FC = () => {
             <div className="flex space-x-4">
               <button
                 type="button"
-                onClick={() => navigate(`/portfolios/${id}`)}
+                onClick={() => navigate(`/accounts/${portfolio.accountId}`)}
                 className="px-6 py-2 text-gray-400 hover:text-gray-300"
               >
                 취소

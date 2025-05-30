@@ -9,6 +9,7 @@
 /coverage
 
 # production
+/dist
 /build
 
 # misc
@@ -33,3 +34,6 @@ yarn-error.log*
 # FTP config
 .ftpconfig
 sftp-config.json
+
+# TypeScript
+*.tsbuildinfo
