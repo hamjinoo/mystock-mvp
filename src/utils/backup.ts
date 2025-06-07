@@ -253,6 +253,7 @@ export const exportBackup = async (): Promise<string> => {
     const backupData: BackupData = {
       timestamp: Date.now(),
       name: `export_${new Date().toISOString()}`,
+      dbVersion: db.verno,
       data: {
         portfolios,
         positions,
