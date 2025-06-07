@@ -1,35 +1,39 @@
-import { PencilIcon } from '@heroicons/react/24/outline';
-import React, { useEffect, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import { useNavigate, useParams } from 'react-router-dom';
-import { db } from '../services/db';
-import { Memo, NewMemo } from '../types';
+import { PencilIcon } from "@heroicons/react/24/outline";
+import React, { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import { useNavigate, useParams } from "react-router-dom";
+import { db } from "../services/db";
+import { Memo, NewMemo } from "../types";
 
 export const MemoDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [memo, setMemo] = useState<Memo | null>(null);
-  const [isEditing, setIsEditing] = useState(id === 'new');
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [isEditing, setIsEditing] = useState(id === "new");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (id === 'new') {
+    if (id === "new") {
       setIsLoading(false);
       return;
     }
 
     const loadMemo = async () => {
       try {
-        const memo = await db.memos.get(Number(id));
+        // DB가 준비되었는지 확인
+        if (!db.isOpen()) {
+          await db.open();
+        }
+        const memo = await db.getMemoById(Number(id));
         if (memo) {
           setMemo(memo);
           setTitle(memo.title);
           setContent(memo.content);
         }
       } catch (error) {
-        console.error('메모 로딩 중 오류:', error);
+        console.error("메모 로딩 중 오류:", error);
       } finally {
         setIsLoading(false);
       }
@@ -41,11 +45,16 @@ export const MemoDetailPage: React.FC = () => {
   const handleSave = async () => {
     try {
       if (!title.trim() || !content.trim()) {
-        alert('제목과 내용을 모두 입력해주세요.');
+        alert("제목과 내용을 모두 입력해주세요.");
         return;
       }
 
-      if (id === 'new') {
+      // DB가 준비되었는지 확인
+      if (!db.isOpen()) {
+        await db.open();
+      }
+
+      if (id === "new") {
         const newMemo: NewMemo = {
           title: title.trim(),
           content: content.trim(),
@@ -53,31 +62,35 @@ export const MemoDetailPage: React.FC = () => {
           updatedAt: Date.now(),
         };
         await db.addMemo(newMemo);
-      } else {
-        await db.memos.update(Number(id), {
+      } else if (memo) {
+        await db.updateMemo({
+          ...memo,
           title: title.trim(),
           content: content.trim(),
-          updatedAt: Date.now(),
         });
       }
-      navigate('/memos');
+      navigate("/memos");
     } catch (error) {
-      console.error('메모 저장 중 오류:', error);
-      alert('메모 저장 중 오류가 발생했습니다.');
+      console.error("메모 저장 중 오류:", error);
+      alert("메모 저장 중 오류가 발생했습니다.");
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('정말로 이 메모를 삭제하시겠습니까?')) {
+    if (!window.confirm("정말로 이 메모를 삭제하시겠습니까?")) {
       return;
     }
 
     try {
-      await db.memos.delete(Number(id));
-      navigate('/memos');
+      // DB가 준비되었는지 확인
+      if (!db.isOpen()) {
+        await db.open();
+      }
+      await db.deleteMemo(Number(id));
+      navigate("/memos");
     } catch (error) {
-      console.error('메모 삭제 중 오류:', error);
-      alert('메모 삭제 중 오류가 발생했습니다.');
+      console.error("메모 삭제 중 오류:", error);
+      alert("메모 삭제 중 오류가 발생했습니다.");
     }
   };
 
@@ -105,8 +118,8 @@ export const MemoDetailPage: React.FC = () => {
             ) : (
               <h1 className="text-2xl font-bold">{title}</h1>
             )}
-            
-            {!isEditing && id !== 'new' && (
+
+            {!isEditing && id !== "new" && (
               <button
                 onClick={() => setIsEditing(true)}
                 className="inline-flex items-center px-3 py-1 text-blue-400 hover:text-blue-300 transition-colors"
@@ -133,12 +146,12 @@ export const MemoDetailPage: React.FC = () => {
                 <div className="flex justify-end gap-2">
                   <button
                     onClick={() => {
-                      if (id === 'new') {
-                        navigate('/memos');
+                      if (id === "new") {
+                        navigate("/memos");
                       } else {
                         setIsEditing(false);
-                        setTitle(memo?.title || '');
-                        setContent(memo?.content || '');
+                        setTitle(memo?.title || "");
+                        setContent(memo?.content || "");
                       }
                     }}
                     className="px-4 py-2 text-gray-400 hover:text-gray-300 transition-colors"
@@ -158,30 +171,73 @@ export const MemoDetailPage: React.FC = () => {
                 <div className="markdown-content">
                   <ReactMarkdown
                     components={{
-                      h1: ({node, ...props}) => <h1 className="text-3xl font-bold mt-8 mb-4" {...props} />,
-                      h2: ({node, ...props}) => <h2 className="text-2xl font-bold mt-6 mb-3" {...props} />,
-                      h3: ({node, ...props}) => <h3 className="text-xl font-bold mt-4 mb-2" {...props} />,
-                      p: ({node, ...props}) => <p className="my-4 leading-relaxed" {...props} />,
-                      ul: ({node, ...props}) => <ul className="list-disc list-inside my-4 space-y-2" {...props} />,
-                      ol: ({node, ...props}) => <ol className="list-decimal list-inside my-4 space-y-2" {...props} />,
-                      li: ({node, ...props}) => <li className="ml-4" {...props} />,
-                      code: ({node, children, className, ...props}: any) => {
-                        const match = /language-(\w+)/.exec(className || '');
+                      h1: ({ node, ...props }) => (
+                        <h1
+                          className="text-3xl font-bold mt-8 mb-4"
+                          {...props}
+                        />
+                      ),
+                      h2: ({ node, ...props }) => (
+                        <h2
+                          className="text-2xl font-bold mt-6 mb-3"
+                          {...props}
+                        />
+                      ),
+                      h3: ({ node, ...props }) => (
+                        <h3
+                          className="text-xl font-bold mt-4 mb-2"
+                          {...props}
+                        />
+                      ),
+                      p: ({ node, ...props }) => (
+                        <p className="my-4 leading-relaxed" {...props} />
+                      ),
+                      ul: ({ node, ...props }) => (
+                        <ul
+                          className="list-disc list-inside my-4 space-y-2"
+                          {...props}
+                        />
+                      ),
+                      ol: ({ node, ...props }) => (
+                        <ol
+                          className="list-decimal list-inside my-4 space-y-2"
+                          {...props}
+                        />
+                      ),
+                      li: ({ node, ...props }) => (
+                        <li className="ml-4" {...props} />
+                      ),
+                      code: ({ node, children, className, ...props }: any) => {
+                        const match = /language-(\w+)/.exec(className || "");
                         const isInline = !className;
                         return isInline ? (
-                          <code className="bg-gray-700 rounded px-1 py-0.5 font-mono text-sm" {...props}>
+                          <code
+                            className="bg-gray-700 rounded px-1 py-0.5 font-mono text-sm"
+                            {...props}
+                          >
                             {children}
                           </code>
                         ) : (
-                          <code className="block bg-gray-700 rounded p-4 font-mono text-sm my-4 overflow-x-auto" {...props}>
+                          <code
+                            className="block bg-gray-700 rounded p-4 font-mono text-sm my-4 overflow-x-auto"
+                            {...props}
+                          >
                             {children}
                           </code>
                         );
                       },
-                      blockquote: ({node, ...props}) => 
-                        <blockquote className="border-l-4 border-gray-500 pl-4 my-4 italic" {...props} />,
-                      a: ({node, ...props}) => 
-                        <a className="text-blue-400 hover:text-blue-300 underline" {...props} />,
+                      blockquote: ({ node, ...props }) => (
+                        <blockquote
+                          className="border-l-4 border-gray-500 pl-4 my-4 italic"
+                          {...props}
+                        />
+                      ),
+                      a: ({ node, ...props }) => (
+                        <a
+                          className="text-blue-400 hover:text-blue-300 underline"
+                          {...props}
+                        />
+                      ),
                     }}
                   >
                     {content}
@@ -193,7 +249,7 @@ export const MemoDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {!isEditing && id !== 'new' && (
+      {!isEditing && id !== "new" && (
         <div className="mt-10 p-4 bg-gray-900">
           <div className="max-w-3xl mx-auto text-center">
             <button
@@ -207,4 +263,4 @@ export const MemoDetailPage: React.FC = () => {
       )}
     </div>
   );
-}; 
+};

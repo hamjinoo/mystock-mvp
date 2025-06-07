@@ -1,39 +1,140 @@
-import { ChartBarIcon, Cog6ToothIcon, DocumentTextIcon, HomeIcon } from '@heroicons/react/24/outline';
-import React, { Suspense } from 'react';
-import { Link, Navigate, Route, Routes } from 'react-router-dom';
-import { AccountDetailPage } from './pages/AccountDetail';
-import { AccountList } from './pages/AccountList';
-import { EditAccountPage } from './pages/EditAccount';
-import { EditPosition as EditPositionPage } from './pages/EditPosition';
-import { MainPage } from './pages/MainPage';
-import { MemoDetailPage } from './pages/MemoDetailPage';
-import { MemoListPage } from './pages/MemoListPage';
-import { NewAccount } from './pages/NewAccount';
-import { NewPortfolioPage } from './pages/NewPortfolio';
-import { NewPositionPage } from './pages/NewPosition';
-import { PortfolioConfigPage } from './pages/PortfolioConfigPage';
-import { PortfolioDetail } from './pages/PortfolioDetail';
-import { PortfolioList } from './pages/PortfolioList';
-import { SettingsPage } from './pages/SettingsPage';
-import { TodoPage } from './pages/TodoPage';
+import {
+  ChartBarIcon,
+  Cog6ToothIcon,
+  DocumentTextIcon,
+  HomeIcon,
+} from "@heroicons/react/24/outline";
+import React, { Suspense, lazy, useEffect } from "react";
+import { Link, Navigate, Route, Routes } from "react-router-dom";
+import { checkAndCreateAutoBackup } from "./utils/backup";
+
+// Lazy-loaded components
+const MainPage = lazy(() =>
+  import("./pages/MainPage").then((module) => ({ default: module.MainPage }))
+);
+const PortfolioList = lazy(() =>
+  import("./pages/PortfolioList").then((module) => ({
+    default: module.PortfolioList,
+  }))
+);
+const NewPortfolioPage = lazy(() =>
+  import("./pages/NewPortfolio").then((module) => ({
+    default: module.NewPortfolioPage,
+  }))
+);
+const PortfolioDetail = lazy(() =>
+  import("./pages/PortfolioDetail").then((module) => ({
+    default: module.PortfolioDetail,
+  }))
+);
+const PortfolioConfigPage = lazy(() =>
+  import("./pages/PortfolioConfigPage").then((module) => ({
+    default: module.PortfolioConfigPage,
+  }))
+);
+const AccountList = lazy(() =>
+  import("./pages/AccountList").then((module) => ({
+    default: module.AccountList,
+  }))
+);
+const NewAccount = lazy(() =>
+  import("./pages/NewAccount").then((module) => ({
+    default: module.NewAccount,
+  }))
+);
+const AccountDetailPage = lazy(() =>
+  import("./pages/AccountDetail").then((module) => ({
+    default: module.AccountDetailPage,
+  }))
+);
+const EditAccountPage = lazy(() =>
+  import("./pages/EditAccount").then((module) => ({
+    default: module.EditAccountPage,
+  }))
+);
+const NewPositionPage = lazy(() =>
+  import("./pages/NewPosition").then((module) => ({
+    default: module.NewPositionPage,
+  }))
+);
+const EditPositionPage = lazy(() =>
+  import("./pages/EditPosition").then((module) => ({
+    default: module.EditPosition,
+  }))
+);
+const MemoListPage = lazy(() =>
+  import("./pages/MemoListPage").then((module) => ({
+    default: module.MemoListPage,
+  }))
+);
+const MemoDetailPage = lazy(() =>
+  import("./pages/MemoDetailPage").then((module) => ({
+    default: module.MemoDetailPage,
+  }))
+);
+const SettingsPage = lazy(() =>
+  import("./pages/SettingsPage").then((module) => ({
+    default: module.SettingsPage,
+  }))
+);
+const TodoPage = lazy(() =>
+  import("./pages/TodoPage").then((module) => ({ default: module.TodoPage }))
+);
+
+// Loading component
+const LoadingSpinner = () => (
+  <div className="flex justify-center items-center h-screen">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-300"></div>
+  </div>
+);
 
 export const App: React.FC = () => {
+  useEffect(() => {
+    // 앱 시작 시 자동 백업 체크
+    checkAndCreateAutoBackup();
+
+    // 주기적으로 자동 백업 체크 (1시간마다)
+    const interval = setInterval(() => {
+      checkAndCreateAutoBackup();
+    }, 60 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<LoadingSpinner />}>
       <div className="min-h-screen bg-gray-900 text-white flex flex-col">
         <main className="flex-1 pb-16">
           <Routes>
             <Route path="/" element={<MainPage />} />
             <Route path="/portfolios" element={<PortfolioList />} />
             <Route path="/portfolios/new" element={<NewPortfolioPage />} />
-            <Route path="/portfolios/:portfolioId" element={<PortfolioDetail />} />
-            <Route path="/portfolios/:portfolioId/config" element={<PortfolioConfigPage />} />
+            <Route
+              path="/portfolios/:portfolioId"
+              element={<PortfolioDetail />}
+            />
+            <Route
+              path="/portfolios/:portfolioId/config"
+              element={<PortfolioConfigPage />}
+            />
             <Route path="/accounts" element={<AccountList />} />
             <Route path="/accounts/new" element={<NewAccount />} />
-            <Route path="/accounts/:accountId" element={<AccountDetailPage />} />
-            <Route path="/accounts/:accountId/edit" element={<EditAccountPage />} />
-            <Route path="/accounts/:accountId/positions/new" element={<NewPositionPage />} />
-            <Route path="/accounts/:accountId/positions/:positionId/edit" element={<EditPositionPage />} />
+            <Route
+              path="/accounts/:accountId"
+              element={<AccountDetailPage />}
+            />
+            <Route
+              path="/accounts/:accountId/edit"
+              element={<EditAccountPage />}
+            />
+            <Route
+              path="/accounts/:accountId/positions/new"
+              element={<NewPositionPage />}
+            />
+            <Route
+              path="/accounts/:accountId/positions/:positionId/edit"
+              element={<EditPositionPage />}
+            />
             <Route path="/memos" element={<MemoListPage />} />
             <Route path="/memos/:id" element={<MemoDetailPage />} />
             <Route path="/settings" element={<SettingsPage />} />

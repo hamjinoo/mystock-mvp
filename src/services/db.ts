@@ -1,15 +1,15 @@
-import Dexie, { Table, Transaction } from 'dexie';
+import Dexie, { Table, Transaction } from "dexie";
 import {
-    Account,
-    Memo,
-    NewMemo,
-    NewPortfolio,
-    NewPosition,
-    NewTodo,
-    Portfolio,
-    Position,
-    Todo
-} from '../types';
+  Account,
+  Memo,
+  NewMemo,
+  NewPortfolio,
+  NewPosition,
+  NewTodo,
+  Portfolio,
+  Position,
+  Todo,
+} from "../types";
 
 export class MyStockDatabase extends Dexie {
   portfolios!: Table<Portfolio>;
@@ -19,22 +19,34 @@ export class MyStockDatabase extends Dexie {
   accounts!: Table<Account>;
 
   constructor() {
-    super('MyStockDB');
-    
+    super("MyStockDB");
+
     this.version(1).stores({
-      accounts: '++id, broker, accountNumber, currency',
-      portfolios: '++id, accountId, name, currency',
-      positions: '++id, portfolioId, symbol, strategyCategory',
-      todos: '++id, portfolioId, completed, createdAt'
+      accounts: "++id, broker, accountNumber, currency",
+      portfolios: "++id, accountId, name, currency",
+      positions: "++id, portfolioId, symbol, strategyCategory",
+      todos: "++id, portfolioId, completed, createdAt",
     });
 
     this.version(7).upgrade((tx: Transaction) => {
-      return tx.table('todos').toCollection().modify((todo: any) => {
-        if ('portfolioGroupId' in todo) {
-          todo.portfolioId = todo.portfolioGroupId;
-          delete todo.portfolioGroupId;
-        }
-      });
+      return tx
+        .table("todos")
+        .toCollection()
+        .modify((todo: any) => {
+          if ("portfolioGroupId" in todo) {
+            todo.portfolioId = todo.portfolioGroupId;
+            delete todo.portfolioGroupId;
+          }
+        });
+    });
+
+    // 메모 테이블 추가
+    this.version(8).stores({
+      accounts: "++id, broker, accountNumber, currency",
+      portfolios: "++id, accountId, name, currency",
+      positions: "++id, portfolioId, symbol, strategyCategory",
+      todos: "++id, portfolioId, completed, createdAt",
+      memos: "++id, title, content, createdAt, updatedAt",
     });
   }
 
@@ -46,10 +58,10 @@ export class MyStockDatabase extends Dexie {
     return await this.accounts.get(id);
   }
 
-  async addAccount(account: Omit<Account, 'id'>): Promise<number> {
+  async addAccount(account: Omit<Account, "id">): Promise<number> {
     const accountData = {
       ...account,
-      createdAt: Date.now()
+      createdAt: Date.now(),
     } as Account;
     return await this.accounts.add(accountData);
   }
@@ -60,13 +72,16 @@ export class MyStockDatabase extends Dexie {
 
   async deleteAccount(id: number): Promise<void> {
     // 계좌에 속한 포트폴리오와 포지션도 함께 삭제
-    const portfolios = await this.portfolios.where('accountId').equals(id).toArray();
-    const portfolioIds = portfolios.map(p => p.id);
-    
+    const portfolios = await this.portfolios
+      .where("accountId")
+      .equals(id)
+      .toArray();
+    const portfolioIds = portfolios.map((p) => p.id);
+
     // 포지션 삭제
-    await this.positions.where('portfolioId').anyOf(portfolioIds).delete();
+    await this.positions.where("portfolioId").anyOf(portfolioIds).delete();
     // 포트폴리오 삭제
-    await this.portfolios.where('accountId').equals(id).delete();
+    await this.portfolios.where("accountId").equals(id).delete();
     // 계좌 삭제
     await this.accounts.delete(id);
   }
@@ -79,20 +94,20 @@ export class MyStockDatabase extends Dexie {
 
   async addPosition(position: NewPosition): Promise<number> {
     const positionsInPortfolio = await this.positions
-      .where('portfolioId')
+      .where("portfolioId")
       .equals(position.portfolioId)
       .toArray();
 
     const positionWithDefaults = {
       ...position,
-      strategyCategory: position.strategyCategory || 'UNCATEGORIZED',
+      strategyCategory: position.strategyCategory || "UNCATEGORIZED",
       strategyTags: position.strategyTags || [],
       entryCount: position.entryCount || 1,
       maxEntries: position.maxEntries || 1,
       targetQuantity: position.targetQuantity || position.quantity,
-      order: positionsInPortfolio.length
+      order: positionsInPortfolio.length,
     } as Position;
-    
+
     return await this.positions.add(positionWithDefaults);
   }
 
@@ -101,7 +116,12 @@ export class MyStockDatabase extends Dexie {
   }
 
   async addMemo(memo: NewMemo): Promise<number> {
-    return await this.memos.add(memo as Memo);
+    const memoData = {
+      ...memo,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    } as Memo;
+    return await this.memos.add(memoData);
   }
 
   async updatePortfolio(portfolio: Portfolio) {
@@ -120,7 +140,7 @@ export class MyStockDatabase extends Dexie {
   async updateMemo(memo: Memo) {
     return await this.memos.update(memo.id, {
       ...memo,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     });
   }
 
@@ -129,7 +149,7 @@ export class MyStockDatabase extends Dexie {
     if (!portfolio) return null;
 
     const positions = await this.positions
-      .where('portfolioId')
+      .where("portfolioId")
       .equals(portfolioId)
       .toArray();
 
@@ -141,13 +161,15 @@ export class MyStockDatabase extends Dexie {
 
   async exportData() {
     try {
-      const [portfolios, positions, todos, memos, accounts] = await Promise.all([
-        this.portfolios.toArray(),
-        this.positions.toArray(),
-        this.todos.toArray(),
-        this.memos.toArray(),
-        this.accounts.toArray()
-      ]);
+      const [portfolios, positions, todos, memos, accounts] = await Promise.all(
+        [
+          this.portfolios.toArray(),
+          this.positions.toArray(),
+          this.todos.toArray(),
+          this.memos.toArray(),
+          this.accounts.toArray(),
+        ]
+      );
 
       return {
         version: 7,
@@ -157,11 +179,11 @@ export class MyStockDatabase extends Dexie {
           positions,
           todos,
           memos,
-          accounts
-        }
+          accounts,
+        },
       };
     } catch (error) {
-      console.error('Error exporting data:', error);
+      console.error("Error exporting data:", error);
       throw error;
     }
   }
@@ -169,18 +191,25 @@ export class MyStockDatabase extends Dexie {
   async importData(importData: any) {
     try {
       if (!importData.data || !importData.version) {
-        throw new Error('Invalid backup data format');
+        throw new Error("Invalid backup data format");
       }
 
-      await this.transaction('rw', 
-        [this.portfolios, this.positions, this.todos, this.memos, this.accounts], 
+      await this.transaction(
+        "rw",
+        [
+          this.portfolios,
+          this.positions,
+          this.todos,
+          this.memos,
+          this.accounts,
+        ],
         async () => {
           await Promise.all([
             this.portfolios.clear(),
             this.positions.clear(),
             this.todos.clear(),
             this.memos.clear(),
-            this.accounts.clear()
+            this.accounts.clear(),
           ]);
 
           await Promise.all([
@@ -188,34 +217,46 @@ export class MyStockDatabase extends Dexie {
             this.positions.bulkAdd(importData.data.positions),
             this.todos.bulkAdd(importData.data.todos),
             this.memos.bulkAdd(importData.data.memos),
-            this.accounts.bulkAdd(importData.data.accounts || [])
+            this.accounts.bulkAdd(importData.data.accounts || []),
           ]);
         }
       );
 
       return true;
     } catch (error) {
-      console.error('Error importing data:', error);
+      console.error("Error importing data:", error);
       throw error;
     }
+  }
+
+  async getMemos(): Promise<Memo[]> {
+    return await this.memos.orderBy("updatedAt").reverse().toArray();
+  }
+
+  async getMemoById(id: number): Promise<Memo | undefined> {
+    return await this.memos.get(id);
+  }
+
+  async deleteMemo(id: number): Promise<void> {
+    await this.memos.delete(id);
   }
 }
 
 export const db = new MyStockDatabase();
 
 // 데이터베이스 연결 상태 확인
-db.on('ready', () => console.log('데이터베이스가 준비되었습니다.'));
+db.on("ready", () => console.log("데이터베이스가 준비되었습니다."));
 
 // 오류 처리
 db.open().catch(async (err: Error) => {
-  console.error('데이터베이스 오류:', err);
-  
-  if (err.name === 'SchemaError') {
-    console.log('스키마 오류로 인해 데이터베이스를 재설정합니다...');
+  console.error("데이터베이스 오류:", err);
+
+  if (err.name === "SchemaError") {
+    console.log("스키마 오류로 인해 데이터베이스를 재설정합니다...");
     await db.delete();
     window.location.reload();
   }
 });
 
 // 서버 초기화 시도를 제거하고 로컬 데이터베이스만 사용
-// db.initializeFromServer().catch(console.error); 
+// db.initializeFromServer().catch(console.error);

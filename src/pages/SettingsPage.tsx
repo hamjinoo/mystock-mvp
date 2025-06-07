@@ -5,6 +5,7 @@ import {
   getBackupList,
   restoreBackup,
 } from "../utils/backup";
+import { db } from "../services/db";
 
 export const SettingsPage: React.FC = () => {
   const [backupName, setBackupName] = useState("");
@@ -35,13 +36,18 @@ export const SettingsPage: React.FC = () => {
       setError(null);
       setSuccess(null);
 
+      // DB가 준비되었는지 확인
+      if (!db.isOpen()) {
+        await db.open();
+      }
+
       await createBackup(backupName.trim());
       setBackupName("");
       loadBackupList();
       setSuccess("백업이 생성되었습니다.");
     } catch (err) {
+      console.error("백업 생성 중 오류:", err);
       setError("백업 생성 중 오류가 발생했습니다.");
-      console.error(err);
     } finally {
       setIsLoading(false);
     }
@@ -61,14 +67,19 @@ export const SettingsPage: React.FC = () => {
       setError(null);
       setSuccess(null);
 
+      // DB가 준비되었는지 확인
+      if (!db.isOpen()) {
+        await db.open();
+      }
+
       await restoreBackup(timestamp);
       setSuccess("백업이 복원되었습니다. 페이지를 새로고침합니다.");
       setTimeout(() => {
         window.location.reload();
       }, 1500);
     } catch (err) {
+      console.error("백업 복원 중 오류:", err);
       setError("백업 복원 중 오류가 발생했습니다.");
-      console.error(err);
     } finally {
       setIsLoading(false);
     }
@@ -84,8 +95,8 @@ export const SettingsPage: React.FC = () => {
       loadBackupList();
       setSuccess("백업이 삭제되었습니다.");
     } catch (err) {
+      console.error("백업 삭제 중 오류:", err);
       setError("백업 삭제 중 오류가 발생했습니다.");
-      console.error(err);
     }
   };
 

@@ -60,18 +60,20 @@ export const PortfolioList: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                {portfolio.config?.totalCapital > 0 && (
-                  <div className="text-right">
-                    <div className="text-lg font-medium">
-                      {new Intl.NumberFormat("ko-KR", {
-                        style: "currency",
-                        currency: portfolio.currency,
-                        maximumFractionDigits: 0,
-                      }).format(portfolio.config.totalCapital)}
+                {portfolio.config &&
+                  portfolio.config.totalCapital &&
+                  portfolio.config.totalCapital > 0 && (
+                    <div className="text-right">
+                      <div className="text-lg font-medium">
+                        {new Intl.NumberFormat("ko-KR", {
+                          style: "currency",
+                          currency: portfolio.currency,
+                          maximumFractionDigits: 0,
+                        }).format(portfolio.config.totalCapital)}
+                      </div>
+                      <div className="text-sm text-gray-400">총 자본금</div>
                     </div>
-                    <div className="text-sm text-gray-400">총 자본금</div>
-                  </div>
-                )}
+                  )}
               </div>
             </Link>
           ))}

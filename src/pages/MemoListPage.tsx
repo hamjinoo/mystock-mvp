@@ -1,8 +1,8 @@
-import { PlusIcon } from '@heroicons/react/24/outline';
-import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { db } from '../services/db';
-import { Memo } from '../types';
+import { PlusIcon } from "@heroicons/react/24/outline";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { db } from "../services/db";
+import { Memo } from "../types";
 
 export const MemoListPage: React.FC = () => {
   const [memos, setMemos] = useState<Memo[]>([]);
@@ -12,10 +12,14 @@ export const MemoListPage: React.FC = () => {
   const loadMemos = async () => {
     try {
       setIsLoading(true);
-      const memos = await db.memos.orderBy('updatedAt').reverse().toArray();
+      // DB가 준비되었는지 확인
+      if (!db.isOpen()) {
+        await db.open();
+      }
+      const memos = await db.getMemos();
       setMemos(memos);
     } catch (error) {
-      console.error('메모 로딩 중 오류:', error);
+      console.error("메모 로딩 중 오류:", error);
     } finally {
       setIsLoading(false);
     }
@@ -27,7 +31,10 @@ export const MemoListPage: React.FC = () => {
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}-${String(date.getDate()).padStart(2, "0")}`;
   };
 
   return (
@@ -36,11 +43,10 @@ export const MemoListPage: React.FC = () => {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">메모장</h1>
           <button
-            onClick={() => navigate('/memos/new')}
+            onClick={() => navigate("/memos/new")}
             className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
           >
-            <PlusIcon className="h-5 w-5 mr-1" />
-            새 메모
+            <PlusIcon className="h-5 w-5 mr-1" />새 메모
           </button>
         </div>
 
@@ -57,7 +63,9 @@ export const MemoListPage: React.FC = () => {
                 className="block p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
               >
                 <div className="flex justify-between items-start">
-                  <h2 className="text-lg font-medium text-white">{memo.title}</h2>
+                  <h2 className="text-lg font-medium text-white">
+                    {memo.title}
+                  </h2>
                   <span className="text-sm text-gray-400">
                     {formatDate(memo.updatedAt)}
                   </span>
@@ -74,4 +82,4 @@ export const MemoListPage: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};
