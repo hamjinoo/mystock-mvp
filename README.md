@@ -54,6 +54,13 @@
    npm run build
    ```
 
+## 테스트 실행
+
+```bash
+npm test
+```
+
+
 ## 배포
 
 - 호스팅: iwinv.net

@@ -157,14 +157,3 @@ export interface Memo {
   updatedAt: number;
 }
 
-// Todo 관련 타입 수정
-export interface Todo {
-  id: number;
-  portfolioId: number;
-  text: string;
-  content?: string;
-  completed: boolean;
-  done?: boolean;
-  createdAt: number;
-  completedAt?: number | null;
-} 
