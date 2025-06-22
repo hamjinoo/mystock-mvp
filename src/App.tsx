@@ -1,4 +1,5 @@
 import {
+  BanknotesIcon,
   ChartBarIcon,
   Cog6ToothIcon,
   DocumentTextIcon,
@@ -160,6 +161,13 @@ export const App: React.FC = () => {
               >
                 <ChartBarIcon className="h-6 w-6" />
                 <span className="text-xs mt-1">포트폴리오</span>
+              </Link>
+              <Link
+                to="/accounts"
+                className="flex flex-col items-center p-2 text-gray-400 hover:text-white"
+              >
+                <BanknotesIcon className="h-6 w-6" />
+                <span className="text-xs mt-1">계좌</span>
               </Link>
               <Link
                 to="/consolidated"
