@@ -1,0 +1,76 @@
+{
+  // Claude API 설정
+  "cursor.chat.openaiApiKey": "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",
+  "cursor.chat.model": "claude-3-5-sonnet-20241022",
+
+  // TypeScript 최적화
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "typescript.preferences.includePackageJsonAutoImports": "auto",
+
+  // 자동 포맷팅
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+
+  // Tailwind CSS 지원
+  "tailwindCSS.includeLanguages": {
+    "typescript": "javascript",
+    "typescriptreact": "javascript"
+  },
+  "tailwindCSS.experimental.classRegex": [
+    ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
+    ["className\\s*[:=]\\s*['\"`]([^'\"`,;]+)['\"`]", "([^'\"`,;]+)"]
+  ],
+
+  // 파일 연결 설정
+  "files.associations": {
+    "*.css": "tailwindcss",
+    ".cursorrules": "markdown"
+  },
+
+  // 검색 제외 설정
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.git": true,
+    "**/coverage": true,
+    "**/.nyc_output": true
+  },
+
+  // 파일 감시 제외
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/.git/**": true
+  },
+
+  // React/JSX 설정
+  "emmet.includeLanguages": {
+    "typescript": "html",
+    "typescriptreact": "html"
+  },
+
+  // 인텔리센스 최적화
+  "typescript.preferences.includePackageJsonAutoImports": "auto",
+  "typescript.suggest.completeFunctionCalls": true,
+  "javascript.suggest.completeFunctionCalls": true,
+
+  // 에디터 설정
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "editor.minimap.enabled": true,
+  "editor.wordWrap": "on",
+  "editor.rulers": [80, 120],
+
+  // Git 설정
+  "git.autofetch": true,
+  "git.confirmSync": false,
+
+  // 확장 기능 권장사항
+  "extensions.ignoreRecommendations": false
+}

@@ -1,15 +1,18 @@
-import { NewPortfolio, NewPosition, Portfolio, Position } from '../types';
-import { db } from './db';
+import { NewPortfolio, NewPosition, Portfolio, Position } from "../types";
+import { db } from "./db";
 
 export class PortfolioService {
   static async getAll(): Promise<Portfolio[]> {
     const portfolios = await db.portfolios.toArray();
-    console.log('DB의 모든 포트폴리오 데이터 (상세):', portfolios.map(p => ({
-      id: p.id,
-      name: p.name,
-      accountId: p.accountId,
-      config: p.config
-    })));
+    console.log(
+      "DB의 모든 포트폴리오 데이터 (상세):",
+      portfolios.map((p) => ({
+        id: p.id,
+        name: p.name,
+        accountId: p.accountId,
+        config: p.config,
+      }))
+    );
     return portfolios;
   }
 
@@ -18,9 +21,40 @@ export class PortfolioService {
   }
 
   static async create(data: NewPortfolio): Promise<Portfolio> {
-    const id = await db.addPortfolio(data);
+    // 기본 설정 추가
+    const portfolioWithDefaults = {
+      ...data,
+      config: data.config || {
+        totalCapital: 0,
+        targetAllocation: 0,
+        categoryAllocations: {
+          LONG_TERM: {
+            targetPercentage: 50,
+            maxStockPercentage: 10,
+            maxEntries: 3,
+          },
+          MID_TERM: {
+            targetPercentage: 30,
+            maxStockPercentage: 7.5,
+            maxEntries: 2,
+          },
+          SHORT_TERM: {
+            targetPercentage: 5,
+            maxStockPercentage: 5,
+            maxEntries: 1,
+          },
+          UNCATEGORIZED: {
+            targetPercentage: 15,
+            maxStockPercentage: 100,
+            maxEntries: 1,
+          },
+        },
+      },
+    };
+
+    const id = await db.addPortfolio(portfolioWithDefaults);
     const portfolio = await this.getById(id);
-    if (!portfolio) throw new Error('포트폴리오 생성에 실패했습니다.');
+    if (!portfolio) throw new Error("포트폴리오 생성에 실패했습니다.");
     return portfolio;
   }
 
@@ -29,37 +63,43 @@ export class PortfolioService {
   }
 
   static async delete(id: number): Promise<void> {
-    await db.transaction('rw', [db.portfolios, db.positions, db.todos], async () => {
-      await db.positions.where('portfolioId').equals(id).delete();
-      await db.todos.where('portfolioId').equals(id).delete();
-      await db.portfolios.delete(id);
-    });
+    await db.transaction(
+      "rw",
+      [db.portfolios, db.positions, db.todos],
+      async () => {
+        await db.positions.where("portfolioId").equals(id).delete();
+        await db.todos.where("portfolioId").equals(id).delete();
+        await db.portfolios.delete(id);
+      }
+    );
   }
 
-  static async getWithPositions(id: number): Promise<Portfolio & { positions: Position[] }> {
+  static async getWithPositions(
+    id: number
+  ): Promise<Portfolio & { positions: Position[] }> {
     const portfolio = await this.getById(id);
-    if (!portfolio) throw new Error('포트폴리오를 찾을 수 없습니다.');
+    if (!portfolio) throw new Error("포트폴리오를 찾을 수 없습니다.");
 
     const positions = await db.positions
-      .where('portfolioId')
+      .where("portfolioId")
       .equals(id)
       .toArray();
 
     return {
       ...portfolio,
-      positions
+      positions,
     };
   }
 
   static async getConsolidatedPositions(portfolioIds: number[]) {
     const positions = await db.positions
-      .where('portfolioId')
+      .where("portfolioId")
       .anyOf(portfolioIds)
       .toArray();
 
     const consolidatedMap = new Map<string, any>();
 
-    positions.forEach(position => {
+    positions.forEach((position) => {
       const key = position.symbol;
       if (!consolidatedMap.has(key)) {
         consolidatedMap.set(key, {
@@ -68,16 +108,17 @@ export class PortfolioService {
           totalQuantity: 0,
           weightedAvgPrice: 0,
           currentPrice: position.currentPrice,
-          positions: []
+          positions: [],
         });
       }
 
       const consolidated = consolidatedMap.get(key);
-      const prevTotal = consolidated.totalQuantity * consolidated.weightedAvgPrice;
+      const prevTotal =
+        consolidated.totalQuantity * consolidated.weightedAvgPrice;
       const newQuantity = consolidated.totalQuantity + position.quantity;
 
       consolidated.totalQuantity = newQuantity;
-      consolidated.weightedAvgPrice = 
+      consolidated.weightedAvgPrice =
         (prevTotal + position.quantity * position.avgPrice) / newQuantity;
       consolidated.positions.push(position);
     });
@@ -88,14 +129,17 @@ export class PortfolioService {
   static async createPosition(data: NewPosition): Promise<Position> {
     const id = await db.positions.add(data as any);
     const position = await db.positions.get(id);
-    if (!position) throw new Error('포지션 생성에 실패했습니다.');
+    if (!position) throw new Error("포지션 생성에 실패했습니다.");
     return position;
   }
 
-  static async updatePosition(positionId: number, data: Partial<Position>): Promise<void> {
+  static async updatePosition(
+    positionId: number,
+    data: Partial<Position>
+  ): Promise<void> {
     const position = await db.positions.get(positionId);
     if (!position) {
-      throw new Error('포지션을 찾을 수 없습니다.');
+      throw new Error("포지션을 찾을 수 없습니다.");
     }
 
     const validatedData = {
@@ -103,7 +147,7 @@ export class PortfolioService {
       ...data,
       symbol: data.symbol?.trim().toUpperCase() || position.symbol,
       name: data.name || data.symbol?.trim().toUpperCase() || position.name,
-      strategyCategory: data.strategyCategory || position.strategyCategory
+      strategyCategory: data.strategyCategory || position.strategyCategory,
     };
 
     await db.positions.update(positionId, validatedData);
@@ -113,8 +157,11 @@ export class PortfolioService {
     await db.positions.delete(positionId);
   }
 
-  static async updatePositionOrder(id: number, positions: Position[]): Promise<void> {
-    await db.transaction('rw', [db.positions], async () => {
+  static async updatePositionOrder(
+    id: number,
+    positions: Position[]
+  ): Promise<void> {
+    await db.transaction("rw", [db.positions], async () => {
       await Promise.all(
         positions.map((position, index) =>
           db.positions.update(position.id, { order: index })
@@ -130,10 +177,10 @@ export class PortfolioService {
     positions: Position[];
   }> {
     const portfolio = await this.getById(id);
-    if (!portfolio) throw new Error('포트폴리오를 찾을 수 없습니다.');
+    if (!portfolio) throw new Error("포트폴리오를 찾을 수 없습니다.");
 
     const positions = await db.positions
-      .where('portfolioId')
+      .where("portfolioId")
       .equals(id)
       .toArray();
 
@@ -147,50 +194,53 @@ export class PortfolioService {
       0
     );
 
-    const returnRate = totalCost > 0 ? ((totalValue - totalCost) / totalCost) * 100 : 0;
+    const returnRate =
+      totalCost > 0 ? ((totalValue - totalCost) / totalCost) * 100 : 0;
 
     return {
       totalValue,
       totalCost,
       returnRate,
-      positions
+      positions,
     };
   }
 
-  static async getPositionById(positionId: number): Promise<Position | undefined> {
+  static async getPositionById(
+    positionId: number
+  ): Promise<Position | undefined> {
     return await db.positions.get(positionId);
   }
 
   static async fixPortfolioData(): Promise<void> {
     const portfolios = await db.portfolios.toArray();
-    
+
     // accountId가 없는 포트폴리오 찾기
-    const invalidPortfolios = portfolios.filter(p => !p.accountId);
-    
+    const invalidPortfolios = portfolios.filter((p) => !p.accountId);
+
     if (invalidPortfolios.length > 0) {
-      console.log('accountId가 없는 포트폴리오:', invalidPortfolios);
-      
+      console.log("accountId가 없는 포트폴리오:", invalidPortfolios);
+
       // 계좌 목록 가져오기
       const accounts = await db.accounts.toArray();
       if (accounts.length === 0) {
-        console.error('사용 가능한 계좌가 없습니다.');
+        console.error("사용 가능한 계좌가 없습니다.");
         return;
       }
-      
+
       // 첫 번째 계좌의 ID를 사용하여 포트폴리오 업데이트
       const defaultAccountId = accounts[0].id;
-      
-      await db.transaction('rw', [db.portfolios], async () => {
+
+      await db.transaction("rw", [db.portfolios], async () => {
         for (const portfolio of invalidPortfolios) {
           await db.portfolios.update(portfolio.id, {
-            accountId: defaultAccountId
+            accountId: defaultAccountId,
           });
         }
       });
-      
-      console.log('포트폴리오 데이터가 수정되었습니다.');
+
+      console.log("포트폴리오 데이터가 수정되었습니다.");
     } else {
-      console.log('모든 포트폴리오가 유효합니다.');
+      console.log("모든 포트폴리오가 유효합니다.");
     }
   }
-} 
+}

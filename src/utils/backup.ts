@@ -1,5 +1,5 @@
 import { db } from "../services/db";
-import { Memo, Portfolio, Position, Todo } from "../types";
+import { Account, Memo, Portfolio, Position, Todo } from "../types";
 
 interface BackupData {
   timestamp: number;
@@ -10,7 +10,7 @@ interface BackupData {
     positions: Position[];
     todos: Todo[];
     memos: Memo[];
-    accounts: any[];
+    accounts: Account[];
   };
 }
 

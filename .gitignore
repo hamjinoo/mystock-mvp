@@ -27,7 +27,7 @@ yarn-error.log*
 
 # IDE
 .idea/
-.vscode/
+# .vscode/ - 프로젝트 설정 공유를 위해 주석 처리
 *.swp
 *.swo
 
@@ -37,3 +37,18 @@ sftp-config.json
 
 # TypeScript
 *.tsbuildinfo
+
+# Cursor AI 설정 (보안상 제외할 파일들)
+.cursor/
+.env.cursor
+
+# 로그 파일
+*.log
+
+# 임시 파일
+*.tmp
+*.temp
+
+# 백업 파일
+*.backup
+*.bak

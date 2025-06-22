@@ -2,6 +2,7 @@ import { PencilIcon } from "@heroicons/react/24/outline";
 import React, { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useNavigate, useParams } from "react-router-dom";
+import { LoadingSpinner } from "../components/LoadingSpinner";
 import { db } from "../services/db";
 import { Memo, NewMemo } from "../types";
 
@@ -97,7 +98,7 @@ export const MemoDetailPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
+        <LoadingSpinner />
       </div>
     );
   }
@@ -207,7 +208,7 @@ export const MemoDetailPage: React.FC = () => {
                       li: ({ node, ...props }) => (
                         <li className="ml-4" {...props} />
                       ),
-                      code: ({ node, children, className, ...props }: any) => {
+                      code: ({ node, children, className, ...props }) => {
                         const match = /language-(\w+)/.exec(className || "");
                         const isInline = !className;
                         return isInline ? (

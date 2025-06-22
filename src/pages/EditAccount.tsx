@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { AccountService } from '../services/accountService';
-import { Account } from '../types';
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import { AccountService } from "../services/accountService";
+import { Account } from "../types";
 
 export const EditAccountPage: React.FC = () => {
   const { accountId } = useParams<{ accountId: string }>();
@@ -22,7 +23,7 @@ export const EditAccountPage: React.FC = () => {
         setAccount(data);
       }
     } catch (error) {
-      console.error('계좌 정보 로딩 중 오류:', error);
+      console.error("계좌 정보 로딩 중 오류:", error);
     } finally {
       setLoading(false);
     }
@@ -37,19 +38,21 @@ export const EditAccountPage: React.FC = () => {
         broker: account.broker.trim(),
         accountNumber: account.accountNumber.trim(),
         accountName: account.accountName.trim(),
-        currency: account.currency
+        currency: account.currency,
       });
       navigate(`/accounts/${accountId}`);
     } catch (error) {
-      console.error('계좌 수정 중 오류:', error);
-      alert('계좌 수정에 실패했습니다.');
+      console.error("계좌 수정 중 오류:", error);
+      alert("계좌 수정에 실패했습니다.");
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-300"></div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center h-64">
+          <LoadingSpinner />
+        </div>
       </div>
     );
   }
@@ -60,7 +63,7 @@ export const EditAccountPage: React.FC = () => {
         <div className="text-center">
           <p className="text-gray-400">계좌를 찾을 수 없습니다.</p>
           <button
-            onClick={() => navigate('/accounts')}
+            onClick={() => navigate("/accounts")}
             className="inline-block mt-4 text-blue-500 hover:text-blue-400"
           >
             계좌 목록으로 돌아가기
@@ -77,13 +80,13 @@ export const EditAccountPage: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium mb-2">
-              증권사
-            </label>
+            <label className="block text-sm font-medium mb-2">증권사</label>
             <input
               type="text"
               value={account.broker}
-              onChange={(e) => setAccount({ ...account, broker: e.target.value })}
+              onChange={(e) =>
+                setAccount({ ...account, broker: e.target.value })
+              }
               className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="예: 키움증권, 미래에셋 등"
               required
@@ -91,13 +94,13 @@ export const EditAccountPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">
-              계좌번호
-            </label>
+            <label className="block text-sm font-medium mb-2">계좌번호</label>
             <input
               type="text"
               value={account.accountNumber}
-              onChange={(e) => setAccount({ ...account, accountNumber: e.target.value })}
+              onChange={(e) =>
+                setAccount({ ...account, accountNumber: e.target.value })
+              }
               className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="예: 123-456789-01"
               required
@@ -105,13 +108,13 @@ export const EditAccountPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">
-              계좌명
-            </label>
+            <label className="block text-sm font-medium mb-2">계좌명</label>
             <input
               type="text"
               value={account.accountName}
-              onChange={(e) => setAccount({ ...account, accountName: e.target.value })}
+              onChange={(e) =>
+                setAccount({ ...account, accountName: e.target.value })
+              }
               className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="예: 주식 계좌, 해외주식 계좌 등"
               required
@@ -119,12 +122,15 @@ export const EditAccountPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">
-              통화
-            </label>
+            <label className="block text-sm font-medium mb-2">통화</label>
             <select
               value={account.currency}
-              onChange={(e) => setAccount({ ...account, currency: e.target.value as 'KRW' | 'USD' })}
+              onChange={(e) =>
+                setAccount({
+                  ...account,
+                  currency: e.target.value as "KRW" | "USD",
+                })
+              }
               className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="KRW">KRW (원)</option>
@@ -143,7 +149,11 @@ export const EditAccountPage: React.FC = () => {
             <button
               type="submit"
               className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              disabled={!account.broker.trim() || !account.accountNumber.trim() || !account.accountName.trim()}
+              disabled={
+                !account.broker.trim() ||
+                !account.accountNumber.trim() ||
+                !account.accountName.trim()
+              }
             >
               저장
             </button>
@@ -152,4 +162,4 @@ export const EditAccountPage: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};

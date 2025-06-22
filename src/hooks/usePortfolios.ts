@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { PortfolioService } from '../services/portfolioService';
-import { NewPortfolio, Portfolio } from '../types';
+import { useEffect, useState } from "react";
+import { PortfolioService } from "../services/portfolioService";
+import { NewPortfolio, Portfolio } from "../types";
 
 export function usePortfolios() {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
@@ -14,7 +14,11 @@ export function usePortfolios() {
       setPortfolios(data);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('포트폴리오 로딩 중 오류가 발생했습니다.'));
+      setError(
+        err instanceof Error
+          ? err
+          : new Error("포트폴리오 로딩 중 오류가 발생했습니다.")
+      );
     } finally {
       setLoading(false);
     }
@@ -24,43 +28,19 @@ export function usePortfolios() {
     loadPortfolios();
   }, []);
 
-  const createPortfolio = async (name: string) => {
+  const createPortfolio = async (name: string, accountId: number = 0) => {
     try {
       const newPortfolio: NewPortfolio = {
         name,
         currency: "KRW",
-        accountId: 0, // 기본 계좌
-        config: {
-          totalCapital: 0,
-          targetAllocation: 0,
-          categoryAllocations: {
-            'LONG_TERM': {
-              targetPercentage: 50,
-              maxStockPercentage: 10,
-              maxEntries: 3
-            },
-            'MID_TERM': {
-              targetPercentage: 30,
-              maxStockPercentage: 7.5,
-              maxEntries: 2
-            },
-            'SHORT_TERM': {
-              targetPercentage: 5,
-              maxStockPercentage: 5,
-              maxEntries: 1
-            },
-            'UNCATEGORIZED': {
-              targetPercentage: 15,
-              maxStockPercentage: 100,
-              maxEntries: 1
-            }
-          }
-        }
+        accountId,
       };
       await PortfolioService.create(newPortfolio);
       await loadPortfolios();
     } catch (err) {
-      throw err instanceof Error ? err : new Error('포트폴리오 생성 중 오류가 발생했습니다.');
+      throw err instanceof Error
+        ? err
+        : new Error("포트폴리오 생성 중 오류가 발생했습니다.");
     }
   };
 
@@ -69,7 +49,9 @@ export function usePortfolios() {
       await PortfolioService.delete(id);
       await loadPortfolios();
     } catch (err) {
-      throw err instanceof Error ? err : new Error('포트폴리오 삭제 중 오류가 발생했습니다.');
+      throw err instanceof Error
+        ? err
+        : new Error("포트폴리오 삭제 중 오류가 발생했습니다.");
     }
   };
 
@@ -81,4 +63,4 @@ export function usePortfolios() {
     deletePortfolio,
     refresh: loadPortfolios,
   };
-} 
+}

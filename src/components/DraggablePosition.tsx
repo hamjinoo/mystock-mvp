@@ -1,13 +1,14 @@
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-import React from 'react';
-import { Draggable } from 'react-beautiful-dnd';
-import { Position } from '../types';
+import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import React from "react";
+import { Draggable } from "react-beautiful-dnd";
+import { Position } from "../types";
+import { formatCurrency } from "../utils/currencyUtils";
 
 interface Props {
   position: Position;
   index: number;
   portfolioId: number;
-  onEdit: (positionId: number) => void;
+  onEdit: (position: Position) => void;
   onDelete: (positionId: number) => void;
 }
 
@@ -16,16 +17,8 @@ export const DraggablePosition: React.FC<Props> = ({
   index,
   portfolioId,
   onEdit,
-  onDelete
+  onDelete,
 }) => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ko-KR', {
-      style: 'currency',
-      currency: 'KRW',
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-
   return (
     <Draggable draggableId={`position-${position.id}`} index={index}>
       {(provided, snapshot) => (
@@ -34,7 +27,7 @@ export const DraggablePosition: React.FC<Props> = ({
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           className={`bg-gray-800 rounded-lg p-4 ${
-            snapshot.isDragging ? 'shadow-lg ring-2 ring-blue-500' : ''
+            snapshot.isDragging ? "shadow-lg ring-2 ring-blue-500" : ""
           }`}
         >
           <div className="flex justify-between items-start">
@@ -46,13 +39,17 @@ export const DraggablePosition: React.FC<Props> = ({
                   보유: {position.quantity.toLocaleString()} 주
                 </p>
                 <p className="text-sm">
-                  현재가: {formatCurrency(position.currentPrice)}
+                  현재가: {formatCurrency(position.currentPrice, "KRW")}
                 </p>
                 <p className="text-sm">
-                  평균단가: {formatCurrency(position.avgPrice)}
+                  평균단가: {formatCurrency(position.avgPrice, "KRW")}
                 </p>
                 <p className="text-sm">
-                  평가금액: {formatCurrency(position.quantity * position.currentPrice)}
+                  평가금액:{" "}
+                  {formatCurrency(
+                    position.quantity * position.currentPrice,
+                    "KRW"
+                  )}
                 </p>
               </div>
               {position.strategyCategory && (
@@ -63,18 +60,18 @@ export const DraggablePosition: React.FC<Props> = ({
                 </div>
               )}
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex space-x-2">
               <button
-                onClick={() => onEdit(position.id)}
-                className="p-2 text-gray-400 hover:text-blue-500"
+                onClick={() => onEdit(position)}
+                className="p-1 text-gray-400 hover:text-white"
               >
-                <PencilIcon className="h-5 w-5" />
+                <PencilIcon className="h-4 w-4" />
               </button>
               <button
                 onClick={() => onDelete(position.id)}
-                className="p-2 text-gray-400 hover:text-red-500"
+                className="p-1 text-gray-400 hover:text-red-400"
               >
-                <TrashIcon className="h-5 w-5" />
+                <TrashIcon className="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -82,4 +79,4 @@ export const DraggablePosition: React.FC<Props> = ({
       )}
     </Draggable>
   );
-}; 
+};

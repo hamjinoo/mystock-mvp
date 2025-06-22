@@ -1,9 +1,19 @@
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
-import { PortfolioService } from '../services/portfolioService';
-import { Portfolio, Position } from '../types';
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import { CHART_COLORS } from "../constants/ui";
+import { PortfolioService } from "../services/portfolioService";
+import { Portfolio, Position } from "../types";
+import { formatCurrency } from "../utils/currencyUtils";
 
 interface PortfolioSummary {
   totalValue: number;
@@ -18,11 +28,6 @@ interface ChartData {
   value: number;
   percentage: number;
 }
-
-const COLORS = [
-  '#00C49F', '#0088FE', '#FFBB28', '#FF8042', '#8884D8',
-  '#82CA9D', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'
-];
 
 export const PortfolioDetail: React.FC = () => {
   const { portfolioId } = useParams<{ portfolioId: string }>();
@@ -42,11 +47,11 @@ export const PortfolioDetail: React.FC = () => {
     try {
       const [portfolioData, summaryData] = await Promise.all([
         PortfolioService.getById(Number(portfolioId)),
-        PortfolioService.getPortfolioSummary(Number(portfolioId))
+        PortfolioService.getPortfolioSummary(Number(portfolioId)),
       ]);
 
       if (!portfolioData) {
-        throw new Error('포트폴리오를 찾을 수 없습니다.');
+        throw new Error("포트폴리오를 찾을 수 없습니다.");
       }
 
       setPortfolio(portfolioData);
@@ -54,36 +59,34 @@ export const PortfolioDetail: React.FC = () => {
 
       // 차트 데이터 생성
       if (summaryData.positions.length > 0) {
-        const chartData = summaryData.positions.map((position: Position) => {
-          const value = position.quantity * position.currentPrice;
-          return {
-            name: position.name,
-            symbol: position.symbol,
-            value,
-            percentage: summaryData.totalValue > 0 ? (value / summaryData.totalValue) * 100 : 0
-          };
-        }).sort((a: ChartData, b: ChartData) => b.value - a.value);
+        const chartData = summaryData.positions
+          .map((position: Position) => {
+            const value = position.quantity * position.currentPrice;
+            return {
+              name: position.name,
+              symbol: position.symbol,
+              value,
+              percentage:
+                summaryData.totalValue > 0
+                  ? (value / summaryData.totalValue) * 100
+                  : 0,
+            };
+          })
+          .sort((a: ChartData, b: ChartData) => b.value - a.value);
 
         setChartData(chartData);
       }
     } catch (error) {
-      console.error('포트폴리오 정보 로딩 중 오류:', error);
+      console.error("포트폴리오 정보 로딩 중 오류:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ko-KR', {
-      style: 'currency',
-      currency: portfolio?.currency || 'KRW'
-    }).format(value);
-  };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-300"></div>
+        <LoadingSpinner />
       </div>
     );
   }
@@ -109,7 +112,7 @@ export const PortfolioDetail: React.FC = () => {
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <button
-            onClick={() => navigate('/portfolios')}
+            onClick={() => navigate("/portfolios")}
             className="text-sm text-gray-400 hover:text-white flex items-center"
           >
             <ArrowLeftIcon className="h-4 w-4 mr-1" />
@@ -122,17 +125,28 @@ export const PortfolioDetail: React.FC = () => {
           <div className="grid grid-cols-3 gap-4">
             <div>
               <p className="text-sm text-gray-400">총자산</p>
-              <p className="font-medium">{formatCurrency(summary.totalValue)}</p>
+              <p className="font-medium">
+                {formatCurrency(
+                  summary.totalValue,
+                  (portfolio?.currency as "KRW" | "USD") || "KRW"
+                )}
+              </p>
             </div>
             <div>
               <p className="text-sm text-gray-400">수익률</p>
-              <p className={`font-medium ${summary.returnRate >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              <p
+                className={`font-medium ${
+                  summary.returnRate >= 0 ? "text-green-400" : "text-red-400"
+                }`}
+              >
                 {summary.returnRate.toFixed(2)}%
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-400">투자 기간</p>
-              <p className="font-medium">{portfolio.config?.period || '미설정'}</p>
+              <p className="font-medium">
+                {portfolio.config?.period || "미설정"}
+              </p>
             </div>
           </div>
         </div>
@@ -155,13 +169,19 @@ export const PortfolioDetail: React.FC = () => {
                       paddingAngle={2}
                     >
                       {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={CHART_COLORS[index % CHART_COLORS.length]}
+                        />
                       ))}
                     </Pie>
                     <Tooltip
                       formatter={(value: number) => [
-                        formatCurrency(value),
-                        '평가금액'
+                        formatCurrency(
+                          value,
+                          (portfolio?.currency as "KRW" | "USD") || "KRW"
+                        ),
+                        "평가금액",
                       ]}
                     />
                     <Legend />
@@ -180,25 +200,50 @@ export const PortfolioDetail: React.FC = () => {
             <div className="space-y-4">
               {summary.positions.map((position, index) => {
                 const value = position.quantity * position.currentPrice;
-                const allocation = summary.totalValue > 0 ? (value / summary.totalValue) * 100 : 0;
-                const returnRate = ((position.currentPrice - position.avgPrice) / position.avgPrice) * 100;
+                const allocation =
+                  summary.totalValue > 0
+                    ? (value / summary.totalValue) * 100
+                    : 0;
+                const returnRate =
+                  ((position.currentPrice - position.avgPrice) /
+                    position.avgPrice) *
+                  100;
 
                 return (
-                  <div key={position.id} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                  <div
+                    key={position.id}
+                    className="flex items-center justify-between p-4 bg-gray-700 rounded-lg"
+                  >
                     <div className="flex items-center">
                       <div
                         className="w-3 h-3 rounded-full mr-2"
-                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        style={{
+                          backgroundColor:
+                            CHART_COLORS[index % CHART_COLORS.length],
+                        }}
                       />
                       <div>
                         <p className="font-medium">{position.name}</p>
-                        <p className="text-sm text-gray-400">{position.symbol}</p>
+                        <p className="text-sm text-gray-400">
+                          {position.symbol}
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">{formatCurrency(value)}</p>
-                      <p className="text-sm text-gray-400">{allocation.toFixed(1)}%</p>
-                      <p className={`text-sm ${returnRate >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      <p className="font-medium">
+                        {formatCurrency(
+                          value,
+                          (portfolio?.currency as "KRW" | "USD") || "KRW"
+                        )}
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        {allocation.toFixed(1)}%
+                      </p>
+                      <p
+                        className={`text-sm ${
+                          returnRate >= 0 ? "text-green-400" : "text-red-400"
+                        }`}
+                      >
                         {returnRate.toFixed(2)}%
                       </p>
                     </div>
@@ -211,4 +256,4 @@ export const PortfolioDetail: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};

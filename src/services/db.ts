@@ -11,6 +11,19 @@ import {
   Todo,
 } from "../types";
 
+interface BackupData {
+  timestamp: number;
+  name: string;
+  dbVersion: number;
+  data: {
+    portfolios: Portfolio[];
+    positions: Position[];
+    todos: Todo[];
+    memos: Memo[];
+    accounts: Account[];
+  };
+}
+
 export class MyStockDatabase extends Dexie {
   portfolios!: Table<Portfolio>;
   positions!: Table<Position>;
@@ -32,10 +45,10 @@ export class MyStockDatabase extends Dexie {
       return tx
         .table("todos")
         .toCollection()
-        .modify((todo: any) => {
+        .modify((todo: Todo) => {
           if ("portfolioGroupId" in todo) {
-            todo.portfolioId = todo.portfolioGroupId;
-            delete todo.portfolioGroupId;
+            (todo as any).portfolioId = (todo as any).portfolioGroupId;
+            delete (todo as any).portfolioGroupId;
           }
         });
     });
@@ -188,9 +201,9 @@ export class MyStockDatabase extends Dexie {
     }
   }
 
-  async importData(importData: any) {
+  async importData(importData: BackupData) {
     try {
-      if (!importData.data || !importData.version) {
+      if (!importData.data || !importData.dbVersion) {
         throw new Error("Invalid backup data format");
       }
 

@@ -1,16 +1,12 @@
-import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { AccountService } from '../services/accountService';
-import { Account } from '../types';
-
-interface AccountWithStats extends Account {
-  portfolios: any[];
-  totalValue: number;
-}
+import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import { AccountService } from "../services/accountService";
+import { AccountWithPortfolios } from "../types";
 
 export const AccountList: React.FC = () => {
-  const [accounts, setAccounts] = useState<AccountWithStats[]>([]);
+  const [accounts, setAccounts] = useState<AccountWithPortfolios[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,29 +18,31 @@ export const AccountList: React.FC = () => {
       const data = await AccountService.getAllWithPortfolios();
       setAccounts(data);
     } catch (error) {
-      console.error('계좌 목록 로딩 중 오류:', error);
+      console.error("계좌 목록 로딩 중 오류:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('정말 이 계좌를 삭제하시겠습니까?')) return;
+    if (!window.confirm("정말 이 계좌를 삭제하시겠습니까?")) return;
 
     try {
       await AccountService.delete(id);
-      setAccounts(accounts.filter(a => a.id !== id));
+      setAccounts(accounts.filter((a) => a.id !== id));
       window.location.reload();
     } catch (error) {
-      console.error('계좌 삭제 중 오류:', error);
-      alert('계좌 삭제에 실패했습니다.');
+      console.error("계좌 삭제 중 오류:", error);
+      alert("계좌 삭제에 실패했습니다.");
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-300"></div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center h-64">
+          <LoadingSpinner />
+        </div>
       </div>
     );
   }
@@ -58,14 +56,16 @@ export const AccountList: React.FC = () => {
             to="/accounts/new"
             className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
-            <PlusIcon className="h-5 w-5 mr-1" />
-            새 계좌
+            <PlusIcon className="h-5 w-5 mr-1" />새 계좌
           </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {accounts.map((account) => (
-            <div key={account.id} className="bg-gray-800 rounded-lg p-4 relative">
+            <div
+              key={account.id}
+              className="bg-gray-800 rounded-lg p-4 relative"
+            >
               <button
                 onClick={() => handleDelete(account.id)}
                 className="absolute top-2 right-2 p-2 text-gray-400 hover:text-red-500"
@@ -73,7 +73,9 @@ export const AccountList: React.FC = () => {
                 <TrashIcon className="h-5 w-5" />
               </button>
               <Link to={`/accounts/${account.id}`}>
-                <h2 className="text-xl font-bold mb-2">{account.accountName}</h2>
+                <h2 className="text-xl font-bold mb-2">
+                  {account.accountName}
+                </h2>
                 <p className="text-sm text-gray-400 mb-4">{account.broker}</p>
                 <div className="space-y-1">
                   <p className="text-sm">
@@ -82,9 +84,9 @@ export const AccountList: React.FC = () => {
                   </p>
                   <p className="text-sm">
                     <span className="text-gray-400">총자산: </span>
-                    {new Intl.NumberFormat('ko-KR', {
-                      style: 'currency',
-                      currency: account.currency
+                    {new Intl.NumberFormat("ko-KR", {
+                      style: "currency",
+                      currency: account.currency,
                     }).format(account.totalValue)}
                   </p>
                   <p className="text-sm">
@@ -111,4 +113,4 @@ export const AccountList: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};

@@ -1,8 +1,9 @@
-import { Dialog, Transition } from '@headlessui/react';
-import { Fragment, useEffect, useState } from 'react';
-import { AccountService } from '../services/accountService';
-import { db } from '../services/db';
-import { Account, NewPortfolio } from '../types';
+import { Dialog, Transition } from "@headlessui/react";
+import { Fragment, useEffect, useState } from "react";
+import { AccountService } from "../services/accountService";
+import { db } from "../services/db";
+import { Account, NewPortfolio } from "../types";
+import { LoadingSpinner } from "./LoadingSpinner";
 
 interface Props {
   isOpen: boolean;
@@ -10,8 +11,12 @@ interface Props {
   onSuccess: () => void;
 }
 
-export const NewPortfolioModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
-  const [name, setName] = useState('');
+export const NewPortfolioModal: React.FC<Props> = ({
+  isOpen,
+  onClose,
+  onSuccess,
+}) => {
+  const [name, setName] = useState("");
   const [accountId, setAccountId] = useState<number>();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +33,7 @@ export const NewPortfolioModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
         setAccountId(data[0].id);
       }
     } catch (error) {
-      console.error('계좌 목록 로딩 중 오류:', error);
+      console.error("계좌 목록 로딩 중 오류:", error);
     } finally {
       setLoading(false);
     }
@@ -39,8 +44,8 @@ export const NewPortfolioModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
     if (!accountId) return;
 
     try {
-      const account = accounts.find(a => a.id === accountId);
-      if (!account) throw new Error('선택한 계좌를 찾을 수 없습니다.');
+      const account = accounts.find((a) => a.id === accountId);
+      if (!account) throw new Error("선택한 계좌를 찾을 수 없습니다.");
 
       const portfolio: NewPortfolio = {
         name: name.trim(),
@@ -48,22 +53,30 @@ export const NewPortfolioModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
         currency: account.currency,
         config: {
           targetAllocation: 0,
-          period: 'UNCATEGORIZED',
-          description: '새 포트폴리오',
-          totalCapital: 0
-        }
+          period: "UNCATEGORIZED",
+          description: "새 포트폴리오",
+          totalCapital: 0,
+        },
       };
 
       await db.addPortfolio(portfolio);
       onSuccess();
       onClose();
-      setName('');
+      setName("");
       setAccountId(accounts[0]?.id);
     } catch (error) {
-      console.error('포트폴리오 생성 중 오류:', error);
-      alert('포트폴리오 생성에 실패했습니다.');
+      console.error("포트폴리오 생성 중 오류:", error);
+      alert("포트폴리오 생성에 실패했습니다.");
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -99,13 +112,11 @@ export const NewPortfolioModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
                   새 포트폴리오
                 </Dialog.Title>
 
-                {loading ? (
-                  <div className="flex justify-center py-4">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-300"></div>
-                  </div>
-                ) : accounts.length === 0 ? (
+                {accounts.length === 0 ? (
                   <div className="text-center py-4">
-                    <p className="text-gray-400 mb-4">등록된 계좌가 없습니다.</p>
+                    <p className="text-gray-400 mb-4">
+                      등록된 계좌가 없습니다.
+                    </p>
                     <a
                       href="/accounts/new"
                       className="text-blue-500 hover:text-blue-400"
@@ -172,4 +183,4 @@ export const NewPortfolioModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
       </Dialog>
     </Transition>
   );
-}; 
+};

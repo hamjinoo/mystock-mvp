@@ -12,7 +12,7 @@ export interface BasePosition {
   avgPrice: number;
   currentPrice: number;
   tradeDate: string;
-  strategyCategory: 'LONG_TERM' | 'MID_TERM' | 'SHORT_TERM' | 'UNCATEGORIZED';
+  strategyCategory: "LONG_TERM" | "MID_TERM" | "SHORT_TERM" | "UNCATEGORIZED";
   strategyTags?: string[];
 }
 
@@ -76,11 +76,19 @@ export interface Todo {
   completedAt?: number | null;
 }
 
+export interface Memo {
+  id: number;
+  title: string;
+  content: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 // 설정 관련 타입
 export interface StrategyConfig {
-  targetAllocation: number;      // 전체 자산 중 목표 비중 (%)
-  riskLevel: number;            // 위험도 (1-5)
-  rebalancingPeriod?: string;   // 리밸런싱 주기
+  targetAllocation: number; // 전체 자산 중 목표 비중 (%)
+  riskLevel: number; // 위험도 (1-5)
+  rebalancingPeriod?: string; // 리밸런싱 주기
   categoryAllocations: {
     [key in PortfolioCategory]: CategoryConfig;
   };
@@ -103,7 +111,11 @@ export interface PortfolioConfig {
 }
 
 // 카테고리 열거형
-export type PortfolioCategory = 'LONG_TERM' | 'MID_TERM' | 'SHORT_TERM' | 'UNCATEGORIZED';
+export type PortfolioCategory =
+  | "LONG_TERM"
+  | "MID_TERM"
+  | "SHORT_TERM"
+  | "UNCATEGORIZED";
 
 export interface InvestmentCategory {
   name: string;
@@ -141,30 +153,15 @@ export interface BrokerSnapshot {
   positions: Position[];
 }
 
-// 새로운 엔티티 생성을 위한 타입
-export type NewPortfolio = Omit<Portfolio, 'id'>;
-export type NewPosition = Omit<Position, 'id'>;
-export type NewAccount = Omit<Account, 'id'>;
-export type NewMemo = Omit<Memo, 'id'>;
-export type NewTodo = Omit<Todo, 'id'>;
-
-// 기존 메모 관련 타입 유지
-export interface Memo {
-  id: number;
-  title: string;
-  content: string;
-  createdAt: number;
-  updatedAt: number;
+// 계좌 관련 확장 타입
+export interface AccountWithPortfolios extends Account {
+  portfolios: (Portfolio & { positions: Position[] })[];
+  totalValue: number;
 }
 
-// Todo 관련 타입 수정
-export interface Todo {
-  id: number;
-  portfolioId: number;
-  text: string;
-  content?: string;
-  completed: boolean;
-  done?: boolean;
-  createdAt: number;
-  completedAt?: number | null;
-} 
+// 새로운 엔티티 생성을 위한 타입
+export type NewPortfolio = Omit<Portfolio, "id">;
+export type NewPosition = Omit<Position, "id">;
+export type NewAccount = Omit<Account, "id">;
+export type NewMemo = Omit<Memo, "id">;
+export type NewTodo = Omit<Todo, "id">;

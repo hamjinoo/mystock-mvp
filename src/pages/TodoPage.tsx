@@ -1,14 +1,17 @@
-import { PlusIcon } from '@heroicons/react/24/outline';
-import React, { useEffect, useState } from 'react';
-import { PortfolioService } from '../services/portfolioService';
-import { TodoService } from '../services/todoService';
-import { Portfolio, Todo } from '../types';
+import { PlusIcon } from "@heroicons/react/24/outline";
+import React, { useEffect, useState } from "react";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import { PortfolioService } from "../services/portfolioService";
+import { TodoService } from "../services/todoService";
+import { Portfolio, Todo } from "../types";
 
 export const TodoPage: React.FC = () => {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [selectedPortfolio, setSelectedPortfolio] = useState<number | null>(null);
-  const [newTodoText, setNewTodoText] = useState('');
+  const [selectedPortfolio, setSelectedPortfolio] = useState<number | null>(
+    null
+  );
+  const [newTodoText, setNewTodoText] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,12 +22,12 @@ export const TodoPage: React.FC = () => {
     try {
       const [portfoliosData, todosData] = await Promise.all([
         PortfolioService.getAll(),
-        TodoService.getAll()
+        TodoService.getAll(),
       ]);
       setPortfolios(portfoliosData);
       setTodos(todosData);
     } catch (error) {
-      console.error('데이터 로딩 중 오류:', error);
+      console.error("데이터 로딩 중 오류:", error);
     } finally {
       setLoading(false);
     }
@@ -40,13 +43,13 @@ export const TodoPage: React.FC = () => {
         text: newTodoText.trim(),
         completed: false,
         createdAt: Date.now(),
-        completedAt: null
+        completedAt: null,
       });
       setTodos([...todos, newTodo]);
-      setNewTodoText('');
+      setNewTodoText("");
     } catch (error) {
-      console.error('할 일 추가 중 오류:', error);
-      alert('할 일 추가에 실패했습니다.');
+      console.error("할 일 추가 중 오류:", error);
+      alert("할 일 추가에 실패했습니다.");
     }
   };
 
@@ -55,41 +58,43 @@ export const TodoPage: React.FC = () => {
       const updatedTodo = await TodoService.update(todo.id, {
         ...todo,
         completed: !todo.completed,
-        completedAt: !todo.completed ? Date.now() : null
+        completedAt: !todo.completed ? Date.now() : null,
       });
-      setTodos(todos.map(t => t.id === todo.id ? updatedTodo : t));
+      setTodos(todos.map((t) => (t.id === todo.id ? updatedTodo : t)));
     } catch (error) {
-      console.error('할 일 상태 변경 중 오류:', error);
-      alert('할 일 상태 변경에 실패했습니다.');
+      console.error("할 일 상태 변경 중 오류:", error);
+      alert("할 일 상태 변경에 실패했습니다.");
     }
   };
 
   const handleDeleteTodo = async (todoId: number) => {
-    if (!window.confirm('이 할 일을 삭제하시겠습니까?')) return;
+    if (!window.confirm("이 할 일을 삭제하시겠습니까?")) return;
 
     try {
       await TodoService.delete(todoId);
-      setTodos(todos.filter(t => t.id !== todoId));
+      setTodos(todos.filter((t) => t.id !== todoId));
     } catch (error) {
-      console.error('할 일 삭제 중 오류:', error);
-      alert('할 일 삭제에 실패했습니다.');
+      console.error("할 일 삭제 중 오류:", error);
+      alert("할 일 삭제에 실패했습니다.");
     }
   };
 
   const formatDate = (timestamp: number) => {
-    return new Intl.DateTimeFormat('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Intl.DateTimeFormat("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(new Date(timestamp));
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-300"></div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center h-64">
+          <LoadingSpinner />
+        </div>
       </div>
     );
   }
@@ -100,12 +105,14 @@ export const TodoPage: React.FC = () => {
         <h1 className="text-2xl font-bold mb-8">할 일 목록</h1>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium mb-2">
-            포트폴리오
-          </label>
+          <label className="block text-sm font-medium mb-2">포트폴리오</label>
           <select
-            value={selectedPortfolio || ''}
-            onChange={(e) => setSelectedPortfolio(e.target.value ? Number(e.target.value) : null)}
+            value={selectedPortfolio || ""}
+            onChange={(e) =>
+              setSelectedPortfolio(
+                e.target.value ? Number(e.target.value) : null
+              )
+            }
             className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">포트폴리오 선택</option>
@@ -139,13 +146,13 @@ export const TodoPage: React.FC = () => {
 
         <div className="space-y-4">
           {todos
-            .filter(todo => !selectedPortfolio || todo.portfolioId === selectedPortfolio)
+            .filter(
+              (todo) =>
+                !selectedPortfolio || todo.portfolioId === selectedPortfolio
+            )
             .sort((a, b) => b.createdAt - a.createdAt)
             .map((todo) => (
-              <div
-                key={todo.id}
-                className="bg-gray-800 rounded-lg p-4"
-              >
+              <div key={todo.id} className="bg-gray-800 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center space-x-4">
                     <input
@@ -154,7 +161,11 @@ export const TodoPage: React.FC = () => {
                       onChange={() => handleToggleTodo(todo)}
                       className="h-5 w-5 rounded border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-800"
                     />
-                    <span className={todo.completed ? 'line-through text-gray-400' : ''}>
+                    <span
+                      className={
+                        todo.completed ? "line-through text-gray-400" : ""
+                      }
+                    >
                       {todo.text}
                     </span>
                   </div>
@@ -179,7 +190,9 @@ export const TodoPage: React.FC = () => {
             ))}
         </div>
 
-        {(!todos.length || (selectedPortfolio && !todos.some(t => t.portfolioId === selectedPortfolio))) && (
+        {(!todos.length ||
+          (selectedPortfolio &&
+            !todos.some((t) => t.portfolioId === selectedPortfolio))) && (
           <div className="text-center py-8">
             <p className="text-gray-400">아직 할 일이 없습니다.</p>
           </div>
@@ -187,4 +200,4 @@ export const TodoPage: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};

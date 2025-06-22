@@ -3,9 +3,11 @@ import {
   Cog6ToothIcon,
   DocumentTextIcon,
   HomeIcon,
+  PresentationChartLineIcon,
 } from "@heroicons/react/24/outline";
 import React, { Suspense, lazy, useEffect } from "react";
 import { Link, Navigate, Route, Routes } from "react-router-dom";
+import { LoadingSpinner } from "./components/LoadingSpinner";
 import { checkAndCreateAutoBackup } from "./utils/backup";
 
 // Lazy-loaded components
@@ -62,6 +64,11 @@ const EditPositionPage = lazy(() =>
     default: module.EditPosition,
   }))
 );
+const ConsolidatedView = lazy(() =>
+  import("./pages/ConsolidatedView").then((module) => ({
+    default: module.ConsolidatedView,
+  }))
+);
 const MemoListPage = lazy(() =>
   import("./pages/MemoListPage").then((module) => ({
     default: module.MemoListPage,
@@ -79,13 +86,6 @@ const SettingsPage = lazy(() =>
 );
 const TodoPage = lazy(() =>
   import("./pages/TodoPage").then((module) => ({ default: module.TodoPage }))
-);
-
-// Loading component
-const LoadingSpinner = () => (
-  <div className="flex justify-center items-center h-screen">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-300"></div>
-  </div>
 );
 
 export const App: React.FC = () => {
@@ -135,6 +135,7 @@ export const App: React.FC = () => {
               path="/accounts/:accountId/positions/:positionId/edit"
               element={<EditPositionPage />}
             />
+            <Route path="/consolidated" element={<ConsolidatedView />} />
             <Route path="/memos" element={<MemoListPage />} />
             <Route path="/memos/:id" element={<MemoDetailPage />} />
             <Route path="/settings" element={<SettingsPage />} />
@@ -161,11 +162,18 @@ export const App: React.FC = () => {
                 <span className="text-xs mt-1">포트폴리오</span>
               </Link>
               <Link
-                to="/accounts"
+                to="/consolidated"
+                className="flex flex-col items-center p-2 text-gray-400 hover:text-white"
+              >
+                <PresentationChartLineIcon className="h-6 w-6" />
+                <span className="text-xs mt-1">전체보기</span>
+              </Link>
+              <Link
+                to="/memos"
                 className="flex flex-col items-center p-2 text-gray-400 hover:text-white"
               >
                 <DocumentTextIcon className="h-6 w-6" />
-                <span className="text-xs mt-1">계좌</span>
+                <span className="text-xs mt-1">메모</span>
               </Link>
               <Link
                 to="/settings"

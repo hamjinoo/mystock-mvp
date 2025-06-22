@@ -1,15 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { PortfolioService } from '../services/portfolioService';
-import { Portfolio, PortfolioConfig } from '../types';
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import { PortfolioService } from "../services/portfolioService";
+import { Portfolio, PortfolioConfig } from "../types";
 
 export const PortfolioConfigPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
-  const [accountName, setAccountName] = useState('');
-  const [broker, setBroker] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
+  const [accountName, setAccountName] = useState("");
+  const [broker, setBroker] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
   const [totalCapital, setTotalCapital] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -23,13 +24,13 @@ export const PortfolioConfigPage: React.FC = () => {
       const data = await PortfolioService.getById(Number(id));
       if (data) {
         setPortfolio(data);
-        setAccountName(data.accountName || '');
-        setBroker(data.broker || '');
-        setAccountNumber(data.accountNumber || '');
+        setAccountName(data.accountName || "");
+        setBroker(data.broker || "");
+        setAccountNumber(data.accountNumber || "");
         setTotalCapital(data.config?.totalCapital || 0);
       }
     } catch (error) {
-      console.error('포트폴리오 로딩 중 오류:', error);
+      console.error("포트폴리오 로딩 중 오류:", error);
     } finally {
       setLoading(false);
     }
@@ -43,30 +44,30 @@ export const PortfolioConfigPage: React.FC = () => {
       const updatedConfig: PortfolioConfig = {
         totalCapital,
         categoryAllocations: portfolio.config?.categoryAllocations || {
-          'LONG_TERM': {
+          LONG_TERM: {
             targetPercentage: 50,
             maxStockPercentage: 10,
-            maxEntries: 3
+            maxEntries: 3,
           },
-          'MID_TERM': {
+          MID_TERM: {
             targetPercentage: 30,
             maxStockPercentage: 7.5,
-            maxEntries: 2
+            maxEntries: 2,
           },
-          'SHORT_TERM': {
+          SHORT_TERM: {
             targetPercentage: 5,
             maxStockPercentage: 5,
-            maxEntries: 1
+            maxEntries: 1,
           },
-          'UNCATEGORIZED': {
+          UNCATEGORIZED: {
             targetPercentage: 15,
             maxStockPercentage: 100,
-            maxEntries: 1
-          }
+            maxEntries: 1,
+          },
         },
         period: portfolio.config?.period,
-        description: portfolio.config?.description || '',
-        targetAllocation: portfolio.config?.targetAllocation || 0
+        description: portfolio.config?.description || "",
+        targetAllocation: portfolio.config?.targetAllocation || 0,
       };
 
       await PortfolioService.update(portfolio.id, {
@@ -74,31 +75,34 @@ export const PortfolioConfigPage: React.FC = () => {
         accountName: accountName.trim(),
         broker: broker.trim(),
         accountNumber: accountNumber.trim(),
-        config: updatedConfig
+        config: updatedConfig,
       });
       navigate(`/accounts/${portfolio.accountId}`);
     } catch (error) {
-      console.error('포트폴리오 업데이트 중 오류:', error);
-      alert('포트폴리오 설정 저장에 실패했습니다.');
+      console.error("포트폴리오 업데이트 중 오류:", error);
+      alert("포트폴리오 설정 저장에 실패했습니다.");
     }
   };
 
   const handleDelete = async () => {
-    if (!portfolio || !window.confirm('이 포트폴리오를 삭제하시겠습니까?')) return;
+    if (!portfolio || !window.confirm("이 포트폴리오를 삭제하시겠습니까?"))
+      return;
 
     try {
       await PortfolioService.delete(portfolio.id);
       navigate(`/accounts/${portfolio.accountId}`);
     } catch (error) {
-      console.error('포트폴리오 삭제 중 오류:', error);
-      alert('포트폴리오 삭제에 실패했습니다.');
+      console.error("포트폴리오 삭제 중 오류:", error);
+      alert("포트폴리오 삭제에 실패했습니다.");
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-300"></div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center h-64">
+          <LoadingSpinner />
+        </div>
       </div>
     );
   }
@@ -118,9 +122,7 @@ export const PortfolioConfigPage: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium mb-2">
-              계좌 이름
-            </label>
+            <label className="block text-sm font-medium mb-2">계좌 이름</label>
             <input
               type="text"
               value={accountName}
@@ -131,9 +133,7 @@ export const PortfolioConfigPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">
-              증권사
-            </label>
+            <label className="block text-sm font-medium mb-2">증권사</label>
             <input
               type="text"
               value={broker}
@@ -144,9 +144,7 @@ export const PortfolioConfigPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">
-              계좌번호
-            </label>
+            <label className="block text-sm font-medium mb-2">계좌번호</label>
             <input
               type="text"
               value={accountNumber}
@@ -198,4 +196,4 @@ export const PortfolioConfigPage: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};

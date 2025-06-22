@@ -1,0 +1,32 @@
+{
+  "recommendations": [
+    // TypeScript & React 개발
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-typescript-next",
+    "esbenp.prettier-vscode",
+
+    // 코드 품질
+    "dbaeumer.vscode-eslint",
+    "streetsidesoftware.code-spell-checker",
+
+    // Git 관련
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github",
+
+    // 유틸리티
+    "ms-vscode.vscode-json",
+    "redhat.vscode-yaml",
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense",
+    "ms-vscode.vscode-typescript-next",
+
+    // 테마 & UI
+    "pkief.material-icon-theme",
+    "github.github-vscode-theme",
+
+    // 개발 도구
+    "humao.rest-client",
+    "ms-vscode.vscode-json"
+  ],
+  "unwantedRecommendations": ["ms-vscode.vscode-typescript", "hookyqr.beautify"]
+}

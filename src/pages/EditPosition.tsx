@@ -1,24 +1,31 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { AccountService } from '../services/accountService';
-import { PortfolioService } from '../services/portfolioService';
-import { Account, Portfolio, Position } from '../types';
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { CurrencyInput } from "../components/CurrencyInput";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import { AccountService } from "../services/accountService";
+import { PortfolioService } from "../services/portfolioService";
+import { Account, Portfolio, Position } from "../types";
 
 export const EditPosition: React.FC = () => {
-  const { accountId, positionId } = useParams<{ accountId: string; positionId: string }>();
+  const { accountId, positionId } = useParams<{
+    accountId: string;
+    positionId: string;
+  }>();
   const navigate = useNavigate();
   const [account, setAccount] = useState<Account>();
-  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+  const [allPortfolios, setAllPortfolios] = useState<Portfolio[]>([]);
   const [position, setPosition] = useState<Position>();
   const [loading, setLoading] = useState(true);
 
-  const [symbol, setSymbol] = useState('');
-  const [name, setName] = useState('');
+  const [symbol, setSymbol] = useState("");
+  const [name, setName] = useState("");
   const [quantity, setQuantity] = useState(0);
   const [avgPrice, setAvgPrice] = useState(0);
   const [currentPrice, setCurrentPrice] = useState(0);
   const [portfolioId, setPortfolioId] = useState<number>();
-  const [category, setCategory] = useState<'LONG_TERM' | 'MID_TERM' | 'SHORT_TERM' | 'UNCATEGORIZED'>('UNCATEGORIZED');
+  const [category, setCategory] = useState<
+    "LONG_TERM" | "MID_TERM" | "SHORT_TERM" | "UNCATEGORIZED"
+  >("UNCATEGORIZED");
 
   useEffect(() => {
     loadData();
@@ -30,14 +37,15 @@ export const EditPosition: React.FC = () => {
     try {
       const [accountData, portfoliosData, positionData] = await Promise.all([
         AccountService.getById(Number(accountId)),
-        PortfolioService.getAll(),
-        PortfolioService.getPositionById(Number(positionId))
+        PortfolioService.getAll(), // 모든 포트폴리오 로드
+        PortfolioService.getPositionById(Number(positionId)),
       ]);
 
-      if (!accountData || !positionData) throw new Error('데이터를 찾을 수 없습니다.');
+      if (!accountData || !positionData)
+        throw new Error("데이터를 찾을 수 없습니다.");
 
       setAccount(accountData);
-      setPortfolios(portfoliosData);
+      setAllPortfolios(portfoliosData);
       setPosition(positionData);
 
       // 포지션 데이터로 폼 초기화
@@ -49,7 +57,7 @@ export const EditPosition: React.FC = () => {
       setPortfolioId(positionData.portfolioId);
       setCategory(positionData.strategyCategory);
     } catch (error) {
-      console.error('데이터 로딩 중 오류:', error);
+      console.error("데이터 로딩 중 오류:", error);
     } finally {
       setLoading(false);
     }
@@ -67,19 +75,31 @@ export const EditPosition: React.FC = () => {
         quantity,
         avgPrice,
         currentPrice,
-        strategyCategory: category
+        strategyCategory: category,
       });
-      navigate(`/accounts/${accountId}`);
+
+      // 선택한 포트폴리오가 속한 계좌로 리다이렉트
+      const selectedPortfolio = allPortfolios.find((p) => p.id === portfolioId);
+      const targetAccountId = selectedPortfolio
+        ? selectedPortfolio.accountId
+        : accountId;
+      navigate(`/accounts/${targetAccountId}`);
     } catch (error) {
-      console.error('포지션 수정 중 오류:', error);
-      alert('포지션 수정에 실패했습니다.');
+      console.error("포지션 수정 중 오류:", error);
+      alert("포지션 수정에 실패했습니다.");
     }
   };
 
+  // 선택된 포트폴리오의 통화 가져오기
+  const selectedPortfolio = allPortfolios.find((p) => p.id === portfolioId);
+  const currency = selectedPortfolio?.currency || account?.currency || "KRW";
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-300"></div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center h-64">
+          <LoadingSpinner />
+        </div>
       </div>
     );
   }
@@ -90,7 +110,7 @@ export const EditPosition: React.FC = () => {
         <div className="text-center">
           <p className="text-gray-400">데이터를 찾을 수 없습니다.</p>
           <button
-            onClick={() => navigate('/accounts')}
+            onClick={() => navigate("/accounts")}
             className="mt-4 text-blue-500 hover:text-blue-400"
           >
             계좌 목록으로 돌아가기
@@ -100,6 +120,13 @@ export const EditPosition: React.FC = () => {
     );
   }
 
+  const categoryLabels = {
+    LONG_TERM: "장기 투자",
+    MID_TERM: "중기 투자",
+    SHORT_TERM: "단기 투자",
+    UNCATEGORIZED: "미분류",
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
@@ -107,9 +134,7 @@ export const EditPosition: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium mb-2">
-              종목 코드
-            </label>
+            <label className="block text-sm font-medium mb-2">종목 코드</label>
             <input
               type="text"
               value={symbol}
@@ -121,9 +146,7 @@ export const EditPosition: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">
-              종목명
-            </label>
+            <label className="block text-sm font-medium mb-2">종목명</label>
             <input
               type="text"
               value={name}
@@ -134,35 +157,45 @@ export const EditPosition: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">
-              포트폴리오
-            </label>
+            <label className="block text-sm font-medium mb-2">포트폴리오</label>
             <select
               value={portfolioId}
               onChange={(e) => setPortfolioId(Number(e.target.value))}
               className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             >
-              {portfolios.map((portfolio) => (
+              {allPortfolios.map((portfolio) => (
                 <option key={portfolio.id} value={portfolio.id}>
-                  {portfolio.name}
+                  {portfolio.name} ({portfolio.config?.period || "미분류"}) -{" "}
+                  {portfolio.currency}
                 </option>
               ))}
             </select>
+            <p className="text-xs text-gray-400 mt-1">
+              현재 계좌: {account.accountName} ({account.broker})
+            </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-2">
-              카테고리
+              투자 전략 카테고리
             </label>
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value as 'LONG_TERM' | 'MID_TERM' | 'SHORT_TERM' | 'UNCATEGORIZED')}
+              onChange={(e) =>
+                setCategory(
+                  e.target.value as
+                    | "LONG_TERM"
+                    | "MID_TERM"
+                    | "SHORT_TERM"
+                    | "UNCATEGORIZED"
+                )
+              }
               className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {['LONG_TERM', 'MID_TERM', 'SHORT_TERM', 'UNCATEGORIZED'].map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
+              {Object.entries(categoryLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
                 </option>
               ))}
             </select>
@@ -170,9 +203,7 @@ export const EditPosition: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">
-                수량
-              </label>
+              <label className="block text-sm font-medium mb-2">수량</label>
               <input
                 type="number"
                 value={quantity}
@@ -180,45 +211,43 @@ export const EditPosition: React.FC = () => {
                 className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 min="0"
                 step="1"
+                placeholder="예: 10"
                 required
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                평균단가
-              </label>
-              <input
-                type="number"
-                value={avgPrice}
-                onChange={(e) => setAvgPrice(Number(e.target.value))}
-                className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                min="0"
-                step="0.01"
-                required
-              />
-            </div>
+            <CurrencyInput
+              label="평균단가"
+              value={avgPrice}
+              onChange={setAvgPrice}
+              currency={currency}
+              required
+              type="price"
+            />
 
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                현재가
-              </label>
-              <input
-                type="number"
-                value={currentPrice}
-                onChange={(e) => setCurrentPrice(Number(e.target.value))}
-                className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                min="0"
-                step="0.01"
-                required
-              />
-            </div>
+            <CurrencyInput
+              label="현재가"
+              value={currentPrice}
+              onChange={setCurrentPrice}
+              currency={currency}
+              required
+              type="price"
+            />
           </div>
 
           <div className="flex justify-end space-x-4">
             <button
               type="button"
-              onClick={() => navigate(`/accounts/${accountId}`)}
+              onClick={() => {
+                // 선택된 포트폴리오가 있으면 해당 계좌로, 없으면 원래 계좌로
+                const selectedPortfolio = allPortfolios.find(
+                  (p) => p.id === portfolioId
+                );
+                const targetAccountId = selectedPortfolio
+                  ? selectedPortfolio.accountId
+                  : accountId;
+                navigate(`/accounts/${targetAccountId}`);
+              }}
               className="px-4 py-2 text-gray-400 hover:text-gray-300"
             >
               취소
@@ -234,4 +263,4 @@ export const EditPosition: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};
