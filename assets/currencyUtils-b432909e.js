@@ -1,0 +1,2 @@
+const r=(r,a)=>"KRW"===a?new Intl.NumberFormat("ko-KR").format(Math.round(r)):new Intl.NumberFormat("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}).format(r),a=r=>{const a=r.replace(/[^\d.]/g,"");return parseFloat(a)||0},t=r=>"KRW"===r?"₩":"$",e=(r,a="price")=>"KRW"===r?"price"===a?"예: 50,000":"예: 1,000,000":"price"===a?"예: 150.50":"예: 10,000.00";export{e as a,r as f,t as g,a as p};
+//# sourceMappingURL=currencyUtils-b432909e.js.map
