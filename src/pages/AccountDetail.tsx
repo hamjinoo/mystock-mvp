@@ -1,10 +1,12 @@
 import {
-  ArrowLeftIcon,
-  PencilIcon,
-  PlusIcon,
+    ArrowLeftIcon,
+    CogIcon,
+    PencilIcon,
+    PlusIcon,
 } from "@heroicons/react/24/outline";
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { CashBalanceCard } from "../components/CashBalanceCard";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { AccountService } from "../services/accountService";
 import { PortfolioService } from "../services/portfolioService";
@@ -26,7 +28,10 @@ export const AccountDetailPage: React.FC = () => {
     Account & { portfolios: (Portfolio & { positions: Position[] })[] }
   >();
   const [summary, setSummary] = useState<AccountSummary>();
+  const [cashBalance, setCashBalance] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showBalanceModal, setShowBalanceModal] = useState(false);
+  const [newBalance, setNewBalance] = useState(0);
 
   useEffect(() => {
     loadData();
@@ -36,13 +41,16 @@ export const AccountDetailPage: React.FC = () => {
     if (!accountId) return;
 
     try {
-      const [accountData, summaryData] = await Promise.all([
+      const [accountData, summaryData, cashData] = await Promise.all([
         AccountService.getWithPortfolios(Number(accountId)),
         AccountService.getAccountSummary(Number(accountId)),
+        AccountService.getCashBalance(Number(accountId)),
       ]);
 
       setAccount(accountData);
       setSummary(summaryData);
+      setCashBalance(cashData);
+      setNewBalance(accountData.totalBalance || 0);
     } catch (error) {
       console.error("계좌 정보 로딩 중 오류:", error);
     } finally {
@@ -59,6 +67,19 @@ export const AccountDetailPage: React.FC = () => {
     } catch (error) {
       console.error("포지션 삭제 중 오류:", error);
       alert("포지션 삭제에 실패했습니다.");
+    }
+  };
+
+  const handleUpdateBalance = async () => {
+    if (!accountId) return;
+
+    try {
+      await AccountService.updateAccountBalance(Number(accountId), newBalance);
+      setShowBalanceModal(false);
+      loadData(); // 데이터 새로고침
+    } catch (error) {
+      console.error("계좌 잔고 업데이트 중 오류:", error);
+      alert("계좌 잔고 업데이트에 실패했습니다.");
     }
   };
 
@@ -107,13 +128,22 @@ export const AccountDetailPage: React.FC = () => {
             <ArrowLeftIcon className="h-4 w-4 mr-1" />
             뒤로
           </button>
-          <Link
-            to={`/accounts/${accountId}/edit`}
-            className="text-sm text-gray-400 hover:text-white flex items-center"
-          >
-            <PencilIcon className="h-4 w-4 mr-1" />
-            수정
-          </Link>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowBalanceModal(true)}
+              className="text-sm text-gray-400 hover:text-white flex items-center"
+            >
+              <CogIcon className="h-4 w-4 mr-1" />
+              잔고 설정
+            </button>
+            <Link
+              to={`/accounts/${accountId}/edit`}
+              className="text-sm text-gray-400 hover:text-white flex items-center"
+            >
+              <PencilIcon className="h-4 w-4 mr-1" />
+              수정
+            </Link>
+          </div>
         </div>
 
         <div className="bg-gray-800 rounded-lg p-6 mb-6">
@@ -147,6 +177,54 @@ export const AccountDetailPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* 현금 잔고 카드 */}
+        {cashBalance && (
+          <CashBalanceCard 
+            cashBalance={cashBalance}
+            currency={summary.account.currency}
+            className="mb-6"
+          />
+        )}
+
+        {/* 잔고 설정 모달 */}
+        {showBalanceModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+              <h3 className="text-lg font-bold mb-4">계좌 잔고 설정</h3>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">
+                  총 계좌 잔고 ({summary.account.currency})
+                </label>
+                <input
+                  type="number"
+                  value={newBalance}
+                  onChange={(e) => setNewBalance(Number(e.target.value))}
+                  className="w-full px-4 py-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  min="0"
+                  step="1000"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  현재 투자 중인 금액: {formatCurrency(summary.totalCost, summary.account.currency)}
+                </p>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={() => setShowBalanceModal(false)}
+                  className="px-4 py-2 text-gray-400 hover:text-white"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleUpdateBalance}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  저장
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-6">
           <div>

@@ -1,13 +1,13 @@
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, CalendarDaysIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
+    Cell,
+    Legend,
+    Pie,
+    PieChart,
+    ResponsiveContainer,
+    Tooltip,
 } from "recharts";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { CHART_COLORS } from "../constants/ui";
@@ -121,7 +121,25 @@ export const PortfolioDetail: React.FC = () => {
         </div>
 
         <div className="bg-gray-800 rounded-lg p-6 mb-6">
-          <h1 className="text-2xl font-bold mb-4">{portfolio.name}</h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold">{portfolio.name}</h1>
+            <div className="flex gap-2">
+              <Link
+                to={`/portfolios/${portfolio.id}/investment-rules`}
+                className="inline-flex items-center px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              >
+                <ShieldCheckIcon className="h-4 w-4 mr-1" />
+                투자 규칙
+              </Link>
+              <Link
+                to={`/portfolios/${portfolio.id}/investment-plans`}
+                className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                <CalendarDaysIcon className="h-5 w-5 mr-1" />
+                투자 계획
+              </Link>
+            </div>
+          </div>
           <div className="grid grid-cols-3 gap-4">
             <div>
               <p className="text-sm text-gray-400">총자산</p>
