@@ -1,10 +1,10 @@
 import {
-  BanknotesIcon,
-  ChartBarIcon,
-  Cog6ToothIcon,
-  DocumentTextIcon,
-  HomeIcon,
-  PresentationChartLineIcon,
+    BanknotesIcon,
+    ChartBarIcon,
+    Cog6ToothIcon,
+    DocumentTextIcon,
+    HomeIcon,
+    PresentationChartLineIcon,
 } from "@heroicons/react/24/outline";
 import React, { Suspense, lazy, useEffect } from "react";
 import { Link, Navigate, Route, Routes } from "react-router-dom";
@@ -88,6 +88,21 @@ const SettingsPage = lazy(() =>
 const TodoPage = lazy(() =>
   import("./pages/TodoPage").then((module) => ({ default: module.TodoPage }))
 );
+const InvestmentPlansPage = lazy(() =>
+  import("./pages/InvestmentPlansPage").then((module) => ({ 
+    default: module.InvestmentPlansPage 
+  }))
+);
+const InvestmentPlanDetailPage = lazy(() =>
+  import("./pages/InvestmentPlanDetailPage").then((module) => ({ 
+    default: module.InvestmentPlanDetailPage 
+  }))
+);
+const InvestmentRulesPage = lazy(() =>
+  import("./pages/InvestmentRulesPage").then((module) => ({ 
+    default: module.InvestmentRulesPage 
+  }))
+);
 
 export const App: React.FC = () => {
   useEffect(() => {
@@ -141,6 +156,18 @@ export const App: React.FC = () => {
             <Route path="/memos/:id" element={<MemoDetailPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/todo" element={<TodoPage />} />
+            <Route 
+              path="/portfolios/:portfolioId/investment-plans" 
+              element={<InvestmentPlansPage />} 
+            />
+            <Route 
+              path="/portfolios/:portfolioId/investment-plans/:planId" 
+              element={<InvestmentPlanDetailPage />} 
+            />
+            <Route 
+              path="/portfolios/:portfolioId/investment-rules" 
+              element={<InvestmentRulesPage />} 
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
