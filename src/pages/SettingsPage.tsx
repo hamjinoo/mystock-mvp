@@ -107,10 +107,9 @@ export const SettingsPage: React.FC = () => {
       }
 
       await restoreBackup(timestamp);
-      setSuccess("백업이 복원되었습니다. 페이지를 새로고침합니다.");
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+      setSuccess("백업이 복원되었습니다.");
+      // 새로고침 대신 상태 업데이트 이벤트 발생
+      window.dispatchEvent(new CustomEvent("syncComplete"));
     } catch (err) {
       console.error("백업 복원 중 오류:", err);
       setError("백업 복원 중 오류가 발생했습니다.");
