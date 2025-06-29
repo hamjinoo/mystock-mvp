@@ -310,3 +310,72 @@ export const importBackup = async (file: File): Promise<void> => {
     throw new Error("백업 복원 중 오류가 발생했습니다.");
   }
 };
+
+// 동기화 서비스를 위한 함수들
+export const exportAllData = async () => {
+  try {
+    // DB가 열려있는지 확인
+    if (!db.isOpen()) {
+      await db.open();
+    }
+
+    const [portfolios, positions, todos, memos, accounts] = await Promise.all([
+      db.portfolios?.toArray() || [],
+      db.positions?.toArray() || [],
+      db.todos?.toArray() || [],
+      db.memos?.toArray() || [],
+      db.accounts?.toArray() || [],
+    ]);
+
+    return {
+      portfolios,
+      positions,
+      todos,
+      memos,
+      accounts,
+    };
+  } catch (error) {
+    console.error("데이터 내보내기 중 오류:", error);
+    throw new Error("데이터 내보내기 중 오류가 발생했습니다.");
+  }
+};
+
+export const importAllData = async (data: {
+  portfolios: Portfolio[];
+  positions: Position[];
+  todos: Todo[];
+  memos: Memo[];
+  accounts: Account[];
+}): Promise<void> => {
+  try {
+    // DB가 열려있는지 확인
+    if (!db.isOpen()) {
+      await db.open();
+    }
+
+    // 기존 데이터 삭제
+    await Promise.all(
+      [
+        db.portfolios?.clear(),
+        db.positions?.clear(),
+        db.todos?.clear(),
+        db.memos?.clear(),
+        db.accounts?.clear(),
+      ].filter(Boolean)
+    );
+
+    // 새 데이터 추가
+    await Promise.all(
+      [
+        db.portfolios?.bulkAdd(data.portfolios || []),
+        db.positions?.bulkAdd(data.positions || []),
+        db.todos?.bulkAdd(data.todos || []),
+        db.memos?.bulkAdd(data.memos || []),
+        db.accounts?.bulkAdd(data.accounts || []),
+      ].filter(Boolean)
+    );
+  } catch (error) {
+    console.error("데이터 가져오기 중 오류:", error);
+    throw new Error("데이터 가져오기 중 오류가 발생했습니다.");
+  }
+};
