@@ -1,7 +1,7 @@
 {
   "name": "mystock-mvp",
   "version": "0.1.0",
-  "homepage": "/jinwoo",
+  "homepage": "https://hamjinoo.github.io/mystock-mvp",
   "private": true,
   "dependencies": {
     "@headlessui/react": "^2.2.4",
