@@ -112,6 +112,7 @@ class SyncService {
       }
 
       console.log("✅ 클라우드 동기화 완료");
+      localStorage.setItem("mystock-last-sync", syncData.timestamp);
     } catch (error) {
       console.error("❌ 업로드 실패:", error);
       throw error;
@@ -162,6 +163,9 @@ class SyncService {
       localStorage.setItem("mystock-last-sync", syncData.timestamp);
 
       console.log("✅ 클라우드에서 데이터 동기화 완료");
+
+      // 페이지 새로고침 없이 상태 업데이트를 위한 이벤트 발생
+      window.dispatchEvent(new CustomEvent("syncComplete"));
     } catch (error) {
       console.error("❌ 다운로드 실패:", error);
       throw error;

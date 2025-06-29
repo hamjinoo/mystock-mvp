@@ -29,6 +29,17 @@ export const SettingsPage: React.FC = () => {
   useEffect(() => {
     loadBackupList();
     loadSyncStatus();
+
+    // 동기화 완료 이벤트 리스너 추가
+    const handleSyncComplete = () => {
+      loadSyncStatus();
+    };
+
+    window.addEventListener("syncComplete", handleSyncComplete);
+
+    return () => {
+      window.removeEventListener("syncComplete", handleSyncComplete);
+    };
   }, []);
 
   const loadSyncStatus = async () => {
